@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ip_info"
+version = "1.4.0"
+description = "Queries various providers for information about IP addresses."
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "requests",
+    "sqlite4",
+    "tabulate",
+]
+
+[project.scripts]
+ip_info = "ip_info.main:cli"
+ipi = "ip_info.main:cli"
+import_ip2proxy = "ip_info.datasets.ip2proxy:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
