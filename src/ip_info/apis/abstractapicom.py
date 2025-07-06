@@ -1,53 +1,47 @@
 from datetime import datetime
 import requests
 import sqlite3
+from typing import Dict, List
 
 from ip_info.config import LOCAL_TIMEZONE
-from ip_info.db import check_rate_limits, insert_ip_info, insert_query_info, is_ip_info_recent
+from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
+from ip_info.db._query_db import _check_rate_limits, _is_db_entry_recent
 
-def abstractapicom(ip_addresses, api_key, db_conn: sqlite3.Connection = None, fields=None):
 
-    api_name = "abstractapicom"
-    api_display_name = "AbstractAPI.com"
+def abstractapicom(
+    *,
+    api_name: str,
+    api_display_name: str,
+    ip_addresses: List,
+    rate_limits: List[Dict],
+    api_key: str,
+    db_conn: sqlite3.Connection
+) -> None:
+
     url = "https://ip-intelligence.abstractapi.com/v1/"
 
     for ip_address in ip_addresses:
 
-        flags_strings = []
-
         # skip if a recent entry exists
-        if is_ip_info_recent(api_name, ip_address, db_conn):
+        if _is_db_entry_recent(api_name, ip_address, db_conn):
             continue
 
         # check rate limits
-        rate_limits = [
-            {
-                "query_limit":   1,
-                "timeframe": "second",
-                "type":      "rolling",
-                "status_code":  429,
-                "error_text":   "Too many requests"
-            },
-            {
-                "query_limit":   1000,
-                "timeframe": "day",
-                "type":      "absolute",
-                "status_code":  422,
-                "error_text":   "Quota reached"
-            },
-        ]
-        check_rate_limits(api_name, rate_limits, db_conn)
+        if _check_rate_limits(api_name, rate_limits, db_conn):
+            print("Rate limit reached. Skipping query.")
+            continue
 
-        # build request parameters
-        params = {"api_key": api_key, "ip_address": ip_address}
-        if fields:
-            params["fields"] = fields
+        # build request params
+        params = {
+            "api_key": api_key,
+            "ip_address": ip_address
+        }
 
+        # make request
         try:
             print(f"Querying {api_display_name} for {ip_address}")
             response = requests.get(url, params=params)
-            insert_query_info(api_name, response, db_conn)
-
+            _insert_query_info(api_name, response, db_conn)
 
             # rate limit response
             if response.status_code != 200:
@@ -64,6 +58,7 @@ def abstractapicom(ip_addresses, api_key, db_conn: sqlite3.Connection = None, fi
         last_request_time = datetime.now(LOCAL_TIMEZONE)
 
         ### build flags string
+        flags_strings = []
         # abuse
         if result.get("security", {}).get("is_abuse"):
             flags_strings.append("abuse")
@@ -113,4 +108,4 @@ def abstractapicom(ip_addresses, api_key, db_conn: sqlite3.Connection = None, fi
             "flags": flags_string,
             "raw_json": result
         }
-        insert_ip_info(entries=[entry], db_conn=db_conn)
+        _insert_ip_info(entries=[entry], db_conn=db_conn)

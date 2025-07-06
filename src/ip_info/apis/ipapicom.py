@@ -1,88 +1,82 @@
 from datetime import datetime
 import requests
 import sqlite3
+from typing import Dict, List
 
 from ip_info.config import LOCAL_TIMEZONE
-from ip_info.db import delete_from_db, is_ip_info_recent, store_in_db
-from ip_info.next_query import get_next_query_dict, update_next_query_dict
-from ip_info.format_timestamp import format_timestamp
+from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
+from ip_info.db._query_db import _check_rate_limits, _is_db_entry_recent
 
-def ipapicom(ip_addresses, api_key, db_conn: sqlite3.Connection = None, fields=None, api_output_type="json"):
 
-    api_name = "ipapicom"
-    api_display_name = "IPAPI.com"
+def ipapicom(
+    *,
+    api_name: str,
+    api_display_name: str,
+    ip_addresses: List,
+    rate_limits: List[Dict],
+    api_key: str,
+    db_conn: sqlite3.Connection
+):
+    
     base_url = "https://api.ipapi.com/api"
-    dt_now = datetime.now(LOCAL_TIMEZONE)
 
     # query each ip individually.
     for ip_address in ip_addresses:
 
         # skip query if a recent db entry exists.
-        recent_entry = is_ip_info_recent(api_name, ip_address, db_conn)
+        recent_entry = _is_db_entry_recent(api_name, ip_address, db_conn)
         if recent_entry:
             continue
 
-        # check if rate limit reached
-        next_query_dict = get_next_query_dict()
-        next_allowed_time = next_query_dict.get(api_name)
-        if next_allowed_time and datetime.now(LOCAL_TIMEZONE) < next_allowed_time:
-            next_allowed_string = format_timestamp(next_allowed_time)
-            print(
-                f"Usage limit reached for {api_display_name}. Next query allowed after {next_allowed_string}."
-            )
-            return
+        # check rate limits
+        if _check_rate_limits(api_name, rate_limits, db_conn):
+            print("Rate limit reached. Skipping query.")
+            continue
 
-        # build the url and parameters.
+        # build request params
         url = f"{base_url}/{ip_address}"
         params = {
             "access_key": api_key,
-            "output": api_output_type,
+            "output": "json",
             "hostname": 1,
             "language": "en",
         }
-        if fields:
-            params["fields"] = fields
-
         headers = {}
 
+        # make request
         try:
             print(f"Querying {api_display_name} for {ip_address}")
             response = requests.get(url, headers=headers, params=params)
+            _insert_query_info(api_name, response, db_conn)
+
+            # rate limit response
+            if response.status_code != 200:
+                print(f"Received status code {response.status_code}, message {response.text}. Skipping query")
+                continue
+
             response.raise_for_status()
             result = response.json()
         except requests.exceptions.RequestException as e:
             print(f"Error querying {api_display_name} for IP {ip_address}: {e}")
             continue
 
-        # if the response indicates usage limit reached, update the csv and stop processing
-        if "error" in result and result["error"].get("code") == 104:
-            # calculate the beginning of the next month.
-            if dt_now.month == 12:
-                next_query_dt = datetime(dt_now.year + 1, 1, 1)
-            else:
-                next_query_dt = datetime(dt_now.year, dt_now.month + 1, 1)
-            update_next_query_dict(api_name, next_query_dt)
-            next_query_string = format_timestamp(next_query_dt)
-            print(
-                f"Usage limit reached for {api_display_name}. Stopping further queries until {next_query_string}."
-            )
-            return
+        # save query time for ip database timestamp
+        last_request_time = datetime.now(LOCAL_TIMEZONE)
 
-        delete_from_db(api_name, ip_address, db_conn)
-
-        store_in_db(
-            ip_address=ip_address,
-            api_name=api_name,
-            api_display_name=api_display_name,
-            risk="",
-            city=result.get("city", ""),
-            state=result.get("region_name", ""),
-            cc=result.get("country_code", ""),
-            company="",
-            isp="",
-            as_name="",
-            hostname=result.get("hostname", ""),
-            flags="",
-            raw_json=result,
-            db_conn=db_conn,
-        )
+        entry = {
+            "timestamp": last_request_time,
+            "ip_address": ip_address,
+            "api_name": api_name,
+            "api_display_name": api_display_name,
+            "risk": "",
+            "city": result.get("city", ""),
+            "state": result.get("region_name", ""),
+            "cc": result.get("country_code", ""),
+            "company": "",
+            "isp": "",
+            "as_name": "",
+            "hostname": result.get("hostname", ""),
+            "flags": "",
+            "raw_json": result
+        }
+        _insert_ip_info(entries=[entry], db_conn=db_conn)

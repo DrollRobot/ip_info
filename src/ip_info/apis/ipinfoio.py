@@ -1,70 +1,72 @@
-import ipaddress
-import requests
+from datetime import datetime
 import sqlite3
+from typing import Dict, List
 
-from ip_info.db import delete_from_db, is_ip_info_recent, store_in_db
+import ipinfo
 
-def ipinfoio(ip_addresses, api_key, db_conn: sqlite3.Connection = None):
+from ip_info.config import LOCAL_TIMEZONE
+from ip_info.db._add_to_db import _insert_ip_info
+from ip_info.db._query_db import _is_db_entry_recent
 
-    api_name = "ipinfoio"
-    api_display_name = "IPinfo.io"
-    headers = {
-        "Accept": "application/json"
-    }
 
-    for ip_address in ip_addresses:
+def ipinfoio(
+    *,
+    api_name: str,
+    api_display_name: str,
+    ip_addresses: List,
+    rate_limits: List[Dict], # FIXME figure out how to implement rate limit checking with ipinfo package
+    api_key: str,
+    db_conn: sqlite3.Connection
+):
+    
+    # filter out ips with recent entries in database
+    ips_to_query = [ip for ip in ip_addresses if not _is_db_entry_recent(api_name, ip, db_conn)]
+    if not ips_to_query:
+        return
+    
+    # build request params
+    handler = ipinfo.getHandler(
+        api_key,
+        request_options={"timeout": 5},
+    )
 
-        params = {"token": api_key}
-        
-        # skip if a recent entry exists
-        if is_ip_info_recent(api_name, ip_address, db_conn):
-            continue
-
-        # choose the right endpoint based on IP version
-        try:
-            ip_obj = ipaddress.ip_address(ip_address)
-        except ValueError:
-            print(f"Invalid IP address: {ip_address}")
-            continue
-        if ip_obj.version == 6:
-            base_url = "https://v6.ipinfo.io"  # IPv6‑specific endpoint :contentReference[oaicite:0]{index=0}
+    try:
+        if len(ips_to_query) == 1:
+            print(f"Querying {api_display_name} for {ips_to_query[0]}.")
         else:
-            base_url = "https://ipinfo.io"
-        url = f"{base_url}/{ip_address}/json"
+            print(f"Querying {api_display_name} for {len(ips_to_query)} IPs.")
+        results = handler.getBatchDetails(ips_to_query)
 
-        try:
-            print(f"Querying {api_display_name} for {ip_address}")
-            response = requests.get(url, headers=headers, params=params)
-            response.raise_for_status()
-            result = response.json()
-        except requests.exceptions.RequestException as e:
-            print(f"Error querying {api_display_name} for {ip_address}: {e}")
-            continue
+    except Exception as error:
+        # includes RequestQuotaExceededError, TimeoutExceededError, etc.
+        print(f"Error querying {api_display_name}: {error}")
+        return
 
-        # remove old records
-        delete_from_db(api_name, ip_address, db_conn)
+    # save query time for ip database timestamp
+    last_request_time = datetime.now(LOCAL_TIMEZONE)
 
-        # parse 'org' into ASN and company
-        org = result.get("org", "")
-        if org:
-            parts = org.split(" ", 1)
-            company = " ".join(parts[1:]) if len(parts) > 1 else ""
-        else:
-            company = ""
+    for ip_address, result in results.items():
 
-        store_in_db(
-            ip_address=ip_address,
-            api_name=api_name,
-            api_display_name=api_display_name,
-            risk="",
-            city=result.get("city", ""),
-            state=result.get("region", ""),
-            cc=result.get("country", ""),
-            company=company,
-            isp="",
-            as_name="",
-            hostname=result.get("hostname", ""),
-            flags="",
-            raw_json=result,
-            db_conn=db_conn,
-        )
+            # split as and company
+            org = result.get("org", "")
+            parts = org.split(maxsplit=1)
+            as_name  = parts[0] if parts and parts[0].startswith("AS") else ""
+            company  = parts[1] if len(parts) > 1 else ""
+
+            entry = {
+                "timestamp":   last_request_time,
+                "ip_address":  ip_address,
+                "api_name":    api_name,
+                "api_display_name": api_display_name,
+                "risk":        "",
+                "city":        result.get("city", ""),
+                "state":       result.get("region", ""),
+                "cc":          result.get("country", ""),
+                "company":     company,
+                "isp":         "",
+                "as_name":     as_name,
+                "hostname":    result.get("hostname", ""),
+                "flags":       "",
+                "raw_json":    result,
+            }
+            _insert_ip_info(entries=[entry], db_conn=db_conn)

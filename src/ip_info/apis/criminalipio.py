@@ -1,39 +1,63 @@
+from datetime import datetime
 import requests
 import sqlite3
+from typing import Dict, List
 
-from ip_info.db import delete_from_db, is_ip_info_recent, store_in_db
+from ip_info.config import LOCAL_TIMEZONE
+from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
+from ip_info.db._query_db import _check_rate_limits, _is_db_entry_recent
 
-def criminalipio(ip_addresses, api_key, db_conn: sqlite3.Connection = None):
-    api_name = "criminalipio"
-    api_display_name = "CriminalIP.io"
+
+def criminalipio(
+    *,
+    api_name: str,
+    api_display_name: str,
+    ip_addresses: List,
+    rate_limits: List[Dict],
+    api_key: str,
+    db_conn: sqlite3.Connection
+) -> None:
+    
     url = "https://api.criminalip.io/v1/asset/ip/report/summary"
     headers = {"x-api-key": api_key}
 
     for ip_address in ip_addresses:
 
-        flags_strings = []
+        params = {"ip": ip_address}
 
         # skip if a recent entry exists
-        if is_ip_info_recent(api_name, ip_address, db_conn):
+        if _is_db_entry_recent(api_name, ip_address, db_conn):
             continue
 
-        params = {"ip": ip_address}
+        # check rate limits
+        if _check_rate_limits(api_name, rate_limits, db_conn):
+            print("Rate limit reached. Skipping query.")
+            continue
+
         try:
             print(f"Querying {api_display_name} for {ip_address}")
             response = requests.get(url, headers=headers, params=params)
+            _insert_query_info(api_name, response, db_conn)
+
+            # rate limit response
+            if response.status_code != 200:
+                print(f"Received status code {response.status_code}, message {response.text}. Skipping query")
+                continue
+
             response.raise_for_status()
             result = response.json()
         except requests.exceptions.RequestException as e:
             print(f"Error querying {api_display_name} for {ip_address}: {e}")
             continue
 
-        # delete old record
-        delete_from_db(api_name, ip_address, db_conn)
+        # save query time for ip database timestamp
+        last_request_time = datetime.now(LOCAL_TIMEZONE)
 
         # hostname
         hostname = result.get("summary", {}).get("connection", {}).get("hostname", "")
 
         ### build flags string
+        flags_strings = []
         # cdn
         if result.get("summary", {}).get("detection", {}).get("cdn_ip", {}):
             flags_strings.append("cdn")
@@ -86,19 +110,20 @@ def criminalipio(ip_addresses, api_key, db_conn: sqlite3.Connection = None):
         if cc:
             cc = cc.upper()
 
-        store_in_db(
-            ip_address=ip_address,
-            api_name=api_name,
-            api_display_name=api_display_name,
-            risk="",
-            city="",
-            state="",
-            cc=cc,
-            company=result.get("summary", {}).get("connection", {}).get("ip_address_owner", ""),
-            isp="",
-            as_name="",
-            hostname=hostname,
-            flags=flags_string,
-            raw_json=result,
-            db_conn=db_conn,
-        )
+        entry = {
+            "timestamp": last_request_time,
+            "ip_address": ip_address,
+            "api_name": api_name,
+            "api_display_name": api_display_name,
+            "risk": "",
+            "city": "",
+            "state": "",
+            "cc": "",
+            "company": result.get("summary", {}).get("connection", {}).get("ip_address_owner", ""),
+            "isp": "",
+            "as_name": "",
+            "hostname": hostname,
+            "flags": flags_string,
+            "raw_json": result
+        }
+        _insert_ip_info(entries=[entry], db_conn=db_conn)
