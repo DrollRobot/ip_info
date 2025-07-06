@@ -6,7 +6,9 @@ import os
 import sqlite3
 import time
 
-from ip_info.db import initialize_db, ensure_columns_exist, insert_ip_info, DB_PATH
+from ip_info.config import DB_PATH
+from ip_info.db._initialize_db import initialize_db, ensure_columns_exist
+from ip_info.db._add_to_db import _insert_ip_info
 
 
 def import_ip2proxy(file_path, chunk_size: int = 5000):
@@ -150,7 +152,7 @@ def import_ip2proxy(file_path, chunk_size: int = 5000):
 
                 # flush every chunk_size CSV rows
                 if processed_rows % chunk_size == 0:
-                    insert_ip_info(entries=batch, db_conn=db_conn)
+                    _insert_ip_info(entries=batch, db_conn=db_conn)
                     batch.clear()
 
                 # optional progress/ETA
@@ -170,7 +172,7 @@ def import_ip2proxy(file_path, chunk_size: int = 5000):
 
         # final flush of any leftover entries
         if batch:
-            insert_ip_info(entries=batch, db_conn=db_conn)
+            _insert_ip_info(entries=batch, db_conn=db_conn)
 
         # finish with a newline so the shell prompt appears correctly
         print()

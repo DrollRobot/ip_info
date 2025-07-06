@@ -1,6 +1,6 @@
 from datetime import datetime
 
-def format_timestamp(timestamp: datetime) -> str:
+def _format_timestamp(timestamp: datetime) -> str:
     """
     Formats a datetime object into a string.
     

@@ -4,21 +4,25 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ip_info"
-version = "1.4.0"
+version = "1.5.0"
 description = "Queries various providers for information about IP addresses."
 readme = "README.md"
 requires-python = ">=3.10"
 
 dependencies = [
+    "keyring",
+    "pyperclip>=1.8",
     "requests",
     "sqlite4",
     "tabulate",
+    "ipinfo (>=5.1.1,<6.0.0)",
 ]
 
 [project.scripts]
 ip_info = "ip_info.main:cli"
 ipi = "ip_info.main:cli"
 import_ip2proxy = "ip_info.datasets.ip2proxy:cli"
+ip_info_keys = "ip_info.keys:ip_info_keys"
 
 [tool.setuptools.packages.find]
 where = ["src"]
