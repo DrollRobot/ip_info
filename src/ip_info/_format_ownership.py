@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List
+from typing import Dict
 
 
 def _normalize_text(text: str) -> str:
@@ -21,7 +21,7 @@ def _normalize_text(text: str) -> str:
 def _format_ownership(row:Dict) -> str:
     """Return a canonical ‘ownership’ string from company / ISP / AS-name fields."""
 
-    raw_values: List[str] = [
+    raw_values: list[str] = [
         row.get("company", ""),
         row.get("isp", ""),
         row.get("as_name", ""),
@@ -31,7 +31,7 @@ def _format_ownership(row:Dict) -> str:
     if not values:
         return ""
 
-    uniques: List[str] = []
+    uniques: list[str] = []
     seen_normalised = set()
 
     for v in values:

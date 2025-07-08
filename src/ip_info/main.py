@@ -1,8 +1,11 @@
 import argparse
+import ipaddress
 import sqlite3
+import sys
 from importlib.metadata import version, PackageNotFoundError
-from typing import cast, List 
+from typing import cast 
 
+from ip_info._ask_yn import _ask_yn
 from ip_info._display_ip_info import _display_ip_info
 from ip_info._parse_clipboard import _parse_clipboard
 from ip_info._validate_ip_addresses import _validate_ip_addresses
@@ -33,8 +36,8 @@ def get_package_version() -> str:
 
 def main(
     *, 
-    ip_addresses:List[str], 
-    query_apis, 
+    user_input: list[str], 
+    query_apis: list[str], 
     output_format="table"
     ):
 
@@ -49,14 +52,26 @@ def main(
         initialize_db(db_conn=db_conn)
         ensure_columns_exist(db_conn=db_conn)
 
-        # if not supplied in cli, parse ips from clipboard
-        verbose = True
-        if not ip_addresses:
-            ip_addresses = _parse_clipboard()
-            verbose = False
+        # if input supplied as cli argument
+        if user_input:
+            ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address] = _validate_ip_addresses(
+                user_input=user_input, 
+                verbose=True
+            )
+        # if no cli input, check clipboard
+        else:
+            user_input = _parse_clipboard()
+            if not user_input:
+                sys.exit("No IP addresses supplied and none detected in clipboard.")
 
-        # load api keys and validate inputs
-        ip_addresses = _validate_ip_addresses(user_input=ip_addresses, verbose=verbose)
+            ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address] = _validate_ip_addresses(
+                user_input=user_input, 
+                verbose=False
+            )
+            ip_addresses_string: list[str] = [str(ip) for ip in ip_addresses]
+            print(f"Found in clipboard: {ip_addresses_string}")
+            if _ask_yn("Query these IPs?", true="n"):
+                sys.exit("No IP addresses supplied and none detected in clipboard.")
 
         # loop through each api and run function
         for api_name in query_apis:
@@ -147,7 +162,7 @@ def cli():
     args = parser.parse_args()
 
     # parse ips from positional and named arguments, cast to list
-    ip_addresses = cast(List[str], args.ip_addresses_arg or args.ip_addresses_pos)
+    user_input = cast(list[str], args.ip_addresses_arg or args.ip_addresses_pos)
 
     # set query_apis
     if args.query_apis == ["all"]:
@@ -162,7 +177,7 @@ def cli():
         args.query_apis = []
     
     main(
-        ip_addresses = ip_addresses,
+        user_input = user_input,
         query_apis = args.query_apis,
         output_format = args.output_format
     )
