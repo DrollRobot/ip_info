@@ -8,7 +8,6 @@ version = "1.5.0"
 description = "Queries various providers for information about IP addresses."
 readme = "README.md"
 requires-python = ">=3.10"
-
 dependencies = [
     "keyring",
     "pyperclip>=1.8",

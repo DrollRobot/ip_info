@@ -1,7 +1,8 @@
-from datetime import datetime
+import ipaddress
 import requests
 import sqlite3
-from typing import Dict, List
+from datetime import datetime
+from typing import Dict
 
 from ip_info.config import LOCAL_TIMEZONE
 from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
@@ -12,22 +13,22 @@ def ipapiorg(
     *,
     api_name: str,
     api_display_name: str,
-    ip_addresses: List,
-    rate_limits: List[Dict],
+    ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
+    rate_limits: list[Dict],
     api_key: str,
     db_conn: sqlite3.Connection
-):
+) -> None:
     
     url = "https://pro.ipapi.org/api_json/batch.php"
     max_chunk_size = 100
 
     # filter out ips with recent entries in database
-    to_query = [ip for ip in ip_addresses if not _is_db_entry_recent(api_name, ip, db_conn)]
-    if not to_query:
+    ips_to_query = [ip for ip in ip_addresses if not _is_db_entry_recent(api_name, ip, db_conn)]
+    if not ips_to_query:
         return
 
     # split ips into chunks
-    for i in range(0, len(to_query), max_chunk_size):
+    for i in range(0, len(ips_to_query), max_chunk_size):
 
         # check rate limits
         if _check_rate_limits(api_name, rate_limits, db_conn):
@@ -35,7 +36,7 @@ def ipapiorg(
             continue
 
         # build request params
-        chunk = to_query[i:i + max_chunk_size]
+        chunk = [str(ip) for ip in ips_to_query[i : i + max_chunk_size]]
         params = {
             "key": api_key,
             "ips": ",".join(chunk)
@@ -44,9 +45,9 @@ def ipapiorg(
         # make request
         try:
             if len(chunk) == 1:
-                print(f"Querying {api_display_name} for {chunk[0]}.")
+                print(f"Querying {api_display_name} for {chunk[0]}")
             else:
-                print(f"Querying {api_display_name} for {len(chunk)} IPs.")
+                print(f"Querying {api_display_name} for {len(chunk)} IPs")
             response = requests.get(url, params=params)
             _insert_query_info(api_name, response, db_conn)
 
@@ -73,8 +74,8 @@ def ipapiorg(
                 print(f"Query failed: {result.get('message')}")
                 continue
 
-            ip_address = result.get("query")
-            if not ip_address:
+            query_ip = result.get("query")
+            if not query_ip:
                 continue
 
             ### build flags string
@@ -98,7 +99,7 @@ def ipapiorg(
 
             entry = {
                 "timestamp": last_request_time,
-                "ip_address": ip_address,
+                "ip_address": query_ip,
                 "api_name": api_name,
                 "api_display_name": api_display_name,
                 "risk": "",

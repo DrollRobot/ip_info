@@ -1,7 +1,8 @@
-from datetime import datetime
+import ipaddress
 import requests
 import sqlite3
-from typing import Dict, List
+from datetime import datetime
+from typing import Dict
 
 from ip_info.config import LOCAL_TIMEZONE
 from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
@@ -12,11 +13,11 @@ def ipgeolocationio(
     *,
     api_name: str,
     api_display_name: str,
-    ip_addresses: List,
-    rate_limits: List[Dict],
+    ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
+    rate_limits: list[Dict],
     api_key: str,
     db_conn: sqlite3.Connection
-):
+) -> None:
     
     url = "https://api.ipgeolocation.io/v2/ipgeo"
 
@@ -32,7 +33,7 @@ def ipgeolocationio(
             continue
 
         # build request params
-        params = {"apiKey": api_key, "ip": ip_address}
+        params = {"apiKey": api_key, "ip": str(ip_address)}
 
         # make request
         try:
@@ -56,7 +57,7 @@ def ipgeolocationio(
 
         entry = {
             "timestamp": last_request_time,
-            "ip_address": ip_address,
+            "ip_address": str(ip_address),
             "api_name": api_name,
             "api_display_name": api_display_name,
             "risk": "",

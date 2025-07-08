@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta, timezone
+import ipaddress
 import sqlite3
 import sys
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from ip_info.config import IP_TABLE_NAME, LOCAL_TIMEZONE, MAX_AGE, QUERY_TABLE_NAME
@@ -11,7 +12,7 @@ def _check_rate_limits(
     api_name: str,
     rate_limits: list[dict],
     db_conn: sqlite3.Connection
-):
+) -> bool:
     """
     Enforce rate_limits for api_name, supporting 'rolling' or 'absolute' windows.
 
@@ -167,25 +168,29 @@ def _check_rate_limits(
         else:
             return True
         
+    # if no rate limits passed, allow query
+    return False
+        
 
-def _fetch_ip_info(api_names, ip_address, db_conn: sqlite3.Connection) -> list[dict[str, Any]]:
+def _fetch_ip_info(
+    *,
+    api_names: list[str], 
+    ip_address: ipaddress.IPv4Address | ipaddress.IPv6Address, 
+    db_conn: sqlite3.Connection
+) -> list[dict[str, Any]]:
     """
     Fetches stored responses for given API names and IP address.
     If api_names is 'all', returns all records for that IP_address.
     Returns a list of dicts.
     """
-    # normalize to list
-    if isinstance(api_names, str):
-        api_names = [api_names]
 
     # build query
     if api_names == ["all"]:
-        # ignore api_name filter
         query = (
             f"SELECT * FROM {IP_TABLE_NAME} "
             "WHERE ip_address = ?"
         )
-        params = [ip_address]
+        params = [str(ip_address)]
     else:
         placeholders = ", ".join("?" for _ in api_names)
         query = (
@@ -193,7 +198,7 @@ def _fetch_ip_info(api_names, ip_address, db_conn: sqlite3.Connection) -> list[d
             f"WHERE api_name IN ({placeholders}) "
             "AND ip_address = ?"
         )
-        params = api_names + [ip_address]
+        params = api_names + [str(ip_address)]
 
     if db_conn is None:
         sys.exit("ERROR: no database connection provided.")
@@ -206,13 +211,22 @@ def _fetch_ip_info(api_names, ip_address, db_conn: sqlite3.Connection) -> list[d
     return [dict(row) for row in rows]
 
 
-def _is_db_entry_recent(api_name, ip_address, db_conn: sqlite3.Connection, max_age=MAX_AGE):
+def _is_db_entry_recent(
+    api_name: str,
+    ip_address: ipaddress.IPv4Address | ipaddress.IPv6Address,
+    db_conn: sqlite3.Connection,
+    max_age=MAX_AGE
+) -> bool:
     """
     Checks if a database entry for the specified API and IP address is recent.
     Returns True if at least one entry is within max_age days.
     """
     # reuse _fetch_ip_info, passing along db_conn
-    entries = _fetch_ip_info(api_name, ip_address, db_conn=db_conn)
+    entries = _fetch_ip_info(
+        api_names=[api_name],
+        ip_address=ip_address,
+        db_conn=db_conn
+    )
     if not entries:
         return False
 

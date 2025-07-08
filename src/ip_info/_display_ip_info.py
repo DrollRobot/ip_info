@@ -1,7 +1,7 @@
+import ipaddress
 import json
 import sqlite3
 import tabulate
-from typing import Iterable
 
 from ip_info.db._query_db import _fetch_ip_info
 from ip_info._format_timestamp import _format_timestamp
@@ -18,7 +18,7 @@ DISPLAY_COLUMNS = [
 
 def _display_ip_info(
     *,
-    ip_addresses: Iterable[str],
+    ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
     output_format: str,
     db_conn: sqlite3.Connection,
 ) -> None:
@@ -36,7 +36,11 @@ def _display_ip_info(
 
     for ip_address in ip_addresses:
         print(f"Results for {ip_address}")
-        rows = _fetch_ip_info("all", ip_address, db_conn=db_conn)
+        rows = _fetch_ip_info(
+            api_names=["all"],
+            ip_address=ip_address, 
+            db_conn=db_conn
+        )
 
         if not rows:
             print(f"No data for {ip_address}.")

@@ -1,7 +1,8 @@
-from datetime import datetime
+import ipaddress
 import requests
 import sqlite3
-from typing import Dict, List
+from datetime import datetime
+from typing import Dict
 
 from ip_info.config import LOCAL_TIMEZONE
 from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
@@ -12,8 +13,8 @@ def abuseipdbcom(
     *,
     api_name: str,
     api_display_name: str,
-    ip_addresses: List,
-    rate_limits: List[Dict],
+    ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
+    rate_limits: list[Dict],
     api_key: str,
     db_conn: sqlite3.Connection
 ) -> None:
@@ -23,8 +24,6 @@ def abuseipdbcom(
 
     for ip_address in ip_addresses:
 
-        params = {"ipAddress": ip_address, "maxAgeInDays": "365"}
-
         # skip if a recent entry exists
         if _is_db_entry_recent(api_name, ip_address, db_conn):
             continue
@@ -33,6 +32,11 @@ def abuseipdbcom(
         if _check_rate_limits(api_name, rate_limits, db_conn):
             print("Rate limit reached. Skipping query.")
             continue
+
+        params = {
+            "ipAddress": str(ip_address),
+            "maxAgeInDays": "365"
+        }
 
         try:
             print(f"Querying {api_display_name} for {ip_address}")
@@ -81,7 +85,7 @@ def abuseipdbcom(
 
         entry = {
             "timestamp": last_request_time,
-            "ip_address": ip_address,
+            "ip_address": str(ip_address),
             "api_name": api_name,
             "api_display_name": api_display_name,
             "risk": risk,

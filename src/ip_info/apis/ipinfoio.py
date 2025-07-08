@@ -1,8 +1,8 @@
-from datetime import datetime
-import sqlite3
-from typing import Dict, List
-
+import ipaddress
 import ipinfo
+import sqlite3
+from datetime import datetime
+from typing import Dict
 
 from ip_info.config import LOCAL_TIMEZONE
 from ip_info.db._add_to_db import _insert_ip_info
@@ -13,16 +13,19 @@ def ipinfoio(
     *,
     api_name: str,
     api_display_name: str,
-    ip_addresses: List,
-    rate_limits: List[Dict], # FIXME figure out how to implement rate limit checking with ipinfo package
+    ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
+    rate_limits: list[Dict], # FIXME figure out how to implement rate limit checking with ipinfo package
     api_key: str,
     db_conn: sqlite3.Connection
-):
+) -> None:
     
     # filter out ips with recent entries in database
     ips_to_query = [ip for ip in ip_addresses if not _is_db_entry_recent(api_name, ip, db_conn)]
     if not ips_to_query:
         return
+    
+    ip_strings = [str(ip) for ip in ips_to_query]
+
     
     # build request params
     handler = ipinfo.getHandler(
@@ -32,10 +35,10 @@ def ipinfoio(
 
     try:
         if len(ips_to_query) == 1:
-            print(f"Querying {api_display_name} for {ips_to_query[0]}.")
+            print(f"Querying {api_display_name} for {ips_to_query[0]}")
         else:
-            print(f"Querying {api_display_name} for {len(ips_to_query)} IPs.")
-        results = handler.getBatchDetails(ips_to_query)
+            print(f"Querying {api_display_name} for {len(ips_to_query)} IPs")
+        results = handler.getBatchDetails(ip_strings)
 
     except Exception as error:
         # includes RequestQuotaExceededError, TimeoutExceededError, etc.
@@ -45,7 +48,7 @@ def ipinfoio(
     # save query time for ip database timestamp
     last_request_time = datetime.now(LOCAL_TIMEZONE)
 
-    for ip_address, result in results.items():
+    for query_ip, result in results.items():
 
             # split as and company
             org = result.get("org", "")
@@ -55,7 +58,7 @@ def ipinfoio(
 
             entry = {
                 "timestamp":   last_request_time,
-                "ip_address":  ip_address,
+                "ip_address":  query_ip,
                 "api_name":    api_name,
                 "api_display_name": api_display_name,
                 "risk":        "",
