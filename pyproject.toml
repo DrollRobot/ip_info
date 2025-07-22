@@ -4,17 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ip_info"
-version = "1.5.0"
-description = "Queries various providers for information about IP addresses."
+version = "1.5.3"
+description = "Queries multiple providers for information about IP addresses."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "keyring",
-    "pyperclip>=1.8",
-    "requests",
-    "sqlite4",
-    "tabulate",
     "ipinfo (>=5.1.1,<6.0.0)",
+    "keyring (>=25.6.0,<26.0.0)",
+    "pyperclip (>=1.9.0,<2.0.0)",
+    "requests (>=2.32.4,<3.0.0)",
+    "sqlite4 (>=0.1.1,<0.2.0)",
+    "tabulate (>=0.9.0,<0.10.0)",
 ]
 
 [project.scripts]
@@ -23,5 +23,15 @@ ipi = "ip_info.main:cli"
 import_ip2proxy = "ip_info.datasets.ip2proxy:cli"
 ip_info_keys = "ip_info.keys:ip_info_keys"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts   = "-ra"
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+pytest-cov = "^6.2.1"

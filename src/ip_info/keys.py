@@ -8,10 +8,11 @@ _KEYRING_SERVICE = "ip_info"
 
 
 def _get_api_key(api_name: str) -> str | None:
-    return keyring.get_password(_KEYRING_SERVICE, api_name)
+    return keyring.get_password(f"{_KEYRING_SERVICE}-{api_name}", "default")
 
+ 
 def _set_api_key(api_name: str, api_key: str) -> None:
-    keyring.set_password(_KEYRING_SERVICE, api_name, api_key)
+    keyring.set_password(f"{_KEYRING_SERVICE}-{api_name}", "default", api_key)
 
 
 def ip_info_keys() -> None:
