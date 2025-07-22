@@ -1,12 +1,14 @@
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import ipaddress
 import sqlite3
 import sys
 from importlib.metadata import version, PackageNotFoundError
+import traceback
 from typing import cast 
 
-from ip_info._ask_yn import _ask_yn
-from ip_info._display_ip_info import _display_ip_info
+from ip_info._ask_yn import ask_yn
+from ip_info._display_ip_info import display_ip_info
 from ip_info._parse_clipboard import parse_clipboard
 from ip_info._validate_ip_addresses import _validate_ip_addresses
 from ip_info.apis.abstractapicom import abstractapicom  # noqa: F401
@@ -33,6 +35,31 @@ def get_package_version() -> str:
         return version("ip_info")
     except PackageNotFoundError:
         return "version not found"
+    
+    
+def run_api_function_threadsafe(
+    api_function,
+    api_name: str,
+    api_display_name: str,
+    ip_addresses,
+    rate_limits,
+    api_key,
+):
+    db_conn = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
+    try:
+        api_function(
+            api_name=api_name,
+            api_display_name=api_display_name,
+            ip_addresses=ip_addresses,
+            rate_limits=rate_limits,
+            api_key=api_key,
+            db_conn=db_conn,
+        )
+    except Exception:
+        print(f"[ERROR] Exception in thread for {api_name}")
+        traceback.print_exc()
+    finally:
+        db_conn.close()
 
 
 def main(
@@ -71,46 +98,52 @@ def main(
             )
             ip_addresses_string: list[str] = [str(ip) for ip in ip_addresses]
             print(f"Found in clipboard: {ip_addresses_string}")
-            if _ask_yn("Query these IPs?", true="n"):
+            if ask_yn("Query these IPs?", true="n"):
                 sys.exit("No IP addresses supplied and none detected in clipboard.")
 
-        # loop through each api and run function
-        for api_name in query_apis:
+        with ThreadPoolExecutor(max_workers=15) as executor:
+            futures = []
 
-            # get api information
-            api_metadata = API_METADATA.get(api_name)
-            if api_metadata is None:
-                print(f"Unknown API '{api_name}' - skipping")
-                continue
-            api_display_name = api_metadata["api_display_name"]
-            rate_limits = api_metadata["rate_limits"]
-            requires_key = api_metadata["requires_key"]
+            # loop through each api and create thread
+            for api_name in query_apis:
+                api_metadata = API_METADATA.get(api_name)
+                if not api_metadata:
+                    print(f"Unknown API '{api_name}' - skipping")
+                    continue
 
-            # get api key
-            api_key = _get_api_key(api_name)
-            if not api_key and requires_key:
-                continue
+                api_display_name = api_metadata["api_display_name"]
+                rate_limits = api_metadata["rate_limits"]
+                requires_key = api_metadata["requires_key"]
 
-            # get function object
-            api_function = globals().get(api_name)
-            if api_function is None:
-                print(f"No implementation found for {api_name}")
-                continue
+                api_key = _get_api_key(api_name)
+                if not api_key and requires_key:
+                    continue
 
-            # call api function
-            api_function(
-                api_name=api_name,
-                api_display_name=api_display_name,
-                ip_addresses=ip_addresses,
-                rate_limits=rate_limits,
-                api_key=api_key,
-                db_conn=db_conn,
-            )
+                api_function = globals().get(api_name)
+                if api_function is None:
+                    print(f"No implementation found for {api_name}")
+                    continue
 
+                futures.append(
+                    executor.submit(
+                        run_api_function_threadsafe,
+                        api_function,
+                        api_name,
+                        api_display_name,
+                        ip_addresses,
+                        rate_limits,
+                        api_key,
+                    )
+                )
+
+            # wait for all threads to finish
+            for future in futures:
+                future.result()  # triggers any exceptions
 
         print("")
 
-        _display_ip_info(
+        # retrieve ip info from database and display for user
+        display_ip_info(
             ip_addresses=ip_addresses,
             db_conn=db_conn,
             output_format=output_format,
@@ -162,7 +195,7 @@ def cli():
     
     args = parser.parse_args()
 
-    # parse ips from positional and named arguments, cast to list
+    # parse ips from positional or named argument, normalize to list
     user_input = cast(list[str], args.ip_addresses_arg or args.ip_addresses_pos)
 
     # set query_apis

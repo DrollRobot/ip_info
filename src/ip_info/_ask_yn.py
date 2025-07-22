@@ -1,5 +1,5 @@
 
-def _ask_yn(
+def ask_yn(
     question: str,
     *,
     true: str = "y"

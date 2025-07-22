@@ -16,7 +16,7 @@ DISPLAY_COLUMNS = [
     "flags",
 ]
 
-def _display_ip_info(
+def display_ip_info(
     *,
     ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
     output_format: str,
@@ -60,6 +60,9 @@ def _display_ip_info(
                 row["timestamp"] = _format_timestamp(row["timestamp"])
                 # condense company/isp/asn/hostname
                 row["ownership"] = _format_ownership(row)
+
+            # sort rows by api_display_name
+            rows.sort(key=lambda row: row.get("api_display_name", "").lower())
 
             # build table from database rows
             table = []
