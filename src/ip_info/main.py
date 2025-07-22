@@ -7,7 +7,7 @@ from typing import cast
 
 from ip_info._ask_yn import _ask_yn
 from ip_info._display_ip_info import _display_ip_info
-from ip_info._parse_clipboard import _parse_clipboard
+from ip_info._parse_clipboard import parse_clipboard
 from ip_info._validate_ip_addresses import _validate_ip_addresses
 from ip_info.apis.abstractapicom import abstractapicom  # noqa: F401
 from ip_info.apis.abuseipdbcom import abuseipdbcom  # noqa: F401
@@ -26,6 +26,7 @@ from ip_info.apis.virustotalcom import virustotalcom  # noqa: F401
 from ip_info.config import DB_PATH, API_METADATA
 from ip_info.db._initialize_db import initialize_db, ensure_columns_exist
 from ip_info.keys import _get_api_key
+
 
 def get_package_version() -> str:
     try:
@@ -60,7 +61,7 @@ def main(
             )
         # if no cli input, check clipboard
         else:
-            user_input = _parse_clipboard()
+            user_input = parse_clipboard()
             if not user_input:
                 sys.exit("No IP addresses supplied and none detected in clipboard.")
 
