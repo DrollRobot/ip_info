@@ -7,6 +7,7 @@ from importlib.metadata import version, PackageNotFoundError
 import traceback
 from typing import cast 
 
+from ip_info import __version__
 from ip_info._ask_yn import ask_yn
 from ip_info._display_ip_info import display_ip_info
 from ip_info._parse_clipboard import parse_clipboard
@@ -29,14 +30,7 @@ from ip_info.config import DB_PATH, API_METADATA
 from ip_info.db._initialize_db import initialize_db, ensure_columns_exist
 from ip_info.keys import _get_api_key
 
-
-def get_package_version() -> str:
-    try:
-        return version("ip_info")
-    except PackageNotFoundError:
-        return "version not found"
-    
-    
+  
 def run_api_function_threadsafe(
     api_function,
     api_name: str,
@@ -70,7 +64,7 @@ def main(
     ):
 
     # display package version for user
-    print(f"Package version: {get_package_version()}")
+    print(f"Package version: {__version__}")
 
     # open database
     db_conn = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)

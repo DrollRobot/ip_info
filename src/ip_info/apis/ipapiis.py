@@ -121,6 +121,9 @@ def ipapiis(
             # vpn
             if result.get("is_vpn", {}):
                 flags_strings.append("vpn")
+                service = result.get("vpn", {}).get("service", "")
+                if service:
+                    flags_strings.append(service)
 
             if flags_strings:
                 flags_string = ", ".join(flags_strings)
