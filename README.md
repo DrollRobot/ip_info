@@ -47,6 +47,7 @@ You can enter IP addresses on the command line:
 ![usage - command line](./img/ip_info-1753415554661.webp)
 
 If you don't enter any IPs, the script will parse the text in the clipboard looking for IP addresses. Invalid and reserved IPs will be discarded.
+
 ![usage - clipboard](./img/ip_info-1753417887180.webp)
 
 ### Output format
@@ -76,9 +77,11 @@ To enter a new API key, run ip_info_keys and enter the api number:
 ![add keys 1](./img/ip_info-1753415093128.webp)
 
 Select 2 to set a new key:
+
 ![add keys 2](./img/ip_info-1753415202218.webp)
 
 Enter the key:
+
 ![add keys 3](./img/ip_info-1753415243399.webp)
 
 # APIs
