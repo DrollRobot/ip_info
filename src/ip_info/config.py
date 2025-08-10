@@ -113,7 +113,7 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
             # no documented short term rate limit
             {
                 "query_limit":   1000,
-                "timeframe": "month",
+                "timeframe": "day",
                 "type":      "absolute",
                 "status_code":  429,
             },
@@ -221,6 +221,7 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
         ],
     },
 }
+
  
 TIMEZONE_STRING = "America/New_York"
 LOCAL_TIMEZONE = ZoneInfo(TIMEZONE_STRING)
