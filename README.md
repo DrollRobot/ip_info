@@ -14,11 +14,11 @@ That's why I made ip_info. It:
 
 Examples of the output:
 
-![https://publish-01.obsidian.md/access/4eea2c7a4d66236903a31f38906e45d8/ip_info_images/ip_info-1753236989279.webp]
+![Output example 1](./img/ip_info-1753236989279.webp)
 
-![https://publish-01.obsidian.md/access/4eea2c7a4d66236903a31f38906e45d8/ip_info_images/ip_info-1753237264743.webp]
+![Output example 2](./img/ip_info-1753237264743.webp)
 
-![[ip_info-1753239351548.webp]]
+![Output example 3](./img/ip_info-1753239351548.webp)
 
 
 # Install

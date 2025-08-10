@@ -3,7 +3,6 @@ from concurrent.futures import ThreadPoolExecutor
 import ipaddress
 import sqlite3
 import sys
-from importlib.metadata import version, PackageNotFoundError
 import traceback
 from typing import cast 
 
