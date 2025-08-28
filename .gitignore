@@ -1,5 +1,7 @@
 # package files
 src/ip_info/ip_info.db
+ip_info.code-workspace
+.ignore
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
