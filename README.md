@@ -33,9 +33,9 @@ In the package root directory, (where pyproject.toml is) run:
 pip install .
 ```
 
-Or, if you use poetry:
+Or, if you use uv:
 ```
-poetry install
+uv sync
 ```
 
 
@@ -44,6 +44,7 @@ poetry install
 ### Looking up IPs:
 
 You can enter IP addresses on the command line:
+
 ![usage - command line](./img/ip_info-1753415554661.webp)
 
 If you don't enter any IPs, the script will parse the text in the clipboard looking for IP addresses. Invalid and reserved IPs will be discarded.
@@ -53,9 +54,11 @@ If you don't enter any IPs, the script will parse the text in the clipboard look
 ### Output format
 
 You can view the results in table format with `--output table`: (default)
+
 ![output - table](./img/ip_info-1753417991342.webp)
 
 Or, view the raw json with `--output json`:
+
 ![output - json](./img/ip_info-1753418532254.webp)
 
 ### Choosing which APIs to query
@@ -63,6 +66,7 @@ Or, view the raw json with `--output json`:
 By default, the package queries any API that has keys saved in the keyring, and any that don't require keys.
 
 To query specific APIs, use `--apis <api name>':
+
 ![output - specific api](./img/ip_info-1753420108640.webp)
 
 Note: The output will show data from all APIs that have queries saved in the database for the given IP.
@@ -74,6 +78,7 @@ The package uses the keyring library to store your API keys encrypted at rest.
 4 of the 14 providers don't require API keys. To access the other providers, you'll have to register for an API key. (see below for information about providiers)
 
 To enter a new API key, run ip_info_keys and enter the api number:
+
 ![add keys 1](./img/ip_info-1753415093128.webp)
 
 Select 2 to set a new key:
