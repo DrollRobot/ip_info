@@ -35,7 +35,7 @@ def display_ip_info(
     """
 
     for ip_address in ip_addresses:
-        print(f"Results for {ip_address}")
+        print(ip_address)
         rows = _fetch_ip_info(
             api_names=["all"],
             ip_address=ip_address, 
@@ -79,7 +79,8 @@ def display_ip_info(
                 tabulate.tabulate(
                     table,
                     headers=DISPLAY_COLUMNS,
-                    tablefmt="simple_outline",
+                    # tablefmt="simple_outline",
+                    tablefmt="github",
                     stralign="left",
                 )
             )

@@ -6,7 +6,6 @@ import sys
 import traceback
 from typing import cast 
 
-from ip_info import __version__
 from ip_info._ask_yn import ask_yn
 from ip_info._display_ip_info import display_ip_info
 from ip_info._parse_clipboard import parse_clipboard
@@ -61,9 +60,6 @@ def main(
     query_apis: list[str], 
     output_format="table"
     ):
-
-    # display package version for user
-    print(f"Package version: {__version__}")
 
     # open database
     db_conn = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
