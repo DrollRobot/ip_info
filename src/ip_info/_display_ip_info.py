@@ -35,7 +35,6 @@ def display_ip_info(
     """
 
     for ip_address in ip_addresses:
-        print(ip_address)
         rows = _fetch_ip_info(
             api_names=["all"],
             ip_address=ip_address, 
@@ -47,6 +46,7 @@ def display_ip_info(
             continue
 
         if output_format == "json":
+            print(ip_address)
             for row in rows:
                 ts   = _format_timestamp(row["timestamp"])
                 disp = row["api_display_name"]
@@ -54,7 +54,7 @@ def display_ip_info(
                 print(json.dumps(json.loads(row.get("raw_json", {})), indent=4))
 
         elif output_format == "table":
-
+            print(ip_address)
             for row in rows:
                 # format timestamps for display
                 row["timestamp"] = _format_timestamp(row["timestamp"])
