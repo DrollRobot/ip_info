@@ -82,7 +82,7 @@ def virustotalcom(
             "city": "",
             "state": "",
             "cc": attrs.get("country", ""),
-            "company": attrs.get("as_owner", ""),
+            "company": attrs.get("as_owner", {}),
             "isp": "",
             "as_name": attrs.get("as_owner", {}),
             "hostname": "",

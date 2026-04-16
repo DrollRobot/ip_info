@@ -29,10 +29,13 @@ def display_ip_info(
         ip_addresses: one or more ip strings
         db_conn:     open sqlite connection to the ip_info.db
         output_format:
-            - "json"  → pretty-print raw JSON for every api row
-            - "table" → compact tabular summary (default)
-            - "none"  → do nothing
+            - "rawjson"   → pretty-print raw JSON for every api row
+            - "jsontable" → JSON object keyed by IP with table as value
+            - "table"     → compact tabular summary (default)
+            - "none"      → do nothing
     """
+
+    jsontable_result = {}
 
     for ip_address in ip_addresses:
         rows = _fetch_ip_info(
@@ -45,7 +48,7 @@ def display_ip_info(
             print(f"No data for {ip_address}.")
             continue
 
-        if output_format == "json":
+        if output_format == "rawjson":
             print(ip_address)
             for row in rows:
                 ts   = _format_timestamp(row["timestamp"])
@@ -53,8 +56,7 @@ def display_ip_info(
                 print(f"Showing raw JSON return for {ip_address} from {disp} on {ts}")
                 print(json.dumps(json.loads(row.get("raw_json", {})), indent=4))
 
-        elif output_format == "table":
-            print(ip_address)
+        elif output_format in ("table", "jsontable"):
             for row in rows:
                 # format timestamps for display
                 row["timestamp"] = _format_timestamp(row["timestamp"])
@@ -73,14 +75,21 @@ def display_ip_info(
                     formatted_row.append(value)
                 table.append(formatted_row)
 
-            # display table with tabulate
+            # render table with tabulate
             tabulate.MIN_PADDING = 0
-            print(
-                tabulate.tabulate(
-                    table,
-                    headers=DISPLAY_COLUMNS,
-                    # tablefmt="simple_outline",
-                    tablefmt="github",
-                    stralign="left",
-                )
+            rendered_table = tabulate.tabulate(
+                table,
+                headers=DISPLAY_COLUMNS,
+                # tablefmt="simple_outline",
+                tablefmt="github",
+                stralign="left",
             )
+
+            if output_format == "table":
+                print(ip_address)
+                print(rendered_table)
+            else:
+                jsontable_result[str(ip_address)] = rendered_table
+
+    if output_format == "jsontable":
+        print(json.dumps(jsontable_result, indent=4))

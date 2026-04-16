@@ -23,20 +23,28 @@ Examples of the output:
 
 # Install
 
+If not installed, install git:
+https://git-scm.com/
+
 Clone the repository:
 ```
 git clone https://github.com/DrollRobot/ip_info.git
 ```
 
-In the package root directory, (where pyproject.toml is) run:
+### Recommended: Install with uv
+
+https://docs.astral.sh/uv/
+
+From the repo root, (where pyproject.toml is) run:
+```
+uv tool install .
+```
+
+### Or, install with system interpreter:
 ```
 pip install .
 ```
 
-Or, if you use uv:
-```
-uv sync
-```
 
 
 # Usage
@@ -57,9 +65,9 @@ You can view the results in table format with `--output table`: (default)
 
 ![output - table](./img/ip_info-1753417991342.webp)
 
-Or, view the raw json with `--output json`:
+View the raw json with `--output rawjson`:
 
-![output - json](./img/ip_info-1753418532254.webp)
+![output - rawjson](./img/ip_info-1753418532254.webp)
 
 ### Choosing which APIs to query
 
