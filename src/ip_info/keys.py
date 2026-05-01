@@ -1,5 +1,6 @@
 import getpass
 import keyring
+from keyring.errors import PasswordDeleteError
 from typing import List
 
 from ip_info.config import API_METADATA
@@ -13,6 +14,14 @@ def _get_api_key(api_name: str) -> str | None:
  
 def _set_api_key(api_name: str, api_key: str) -> None:
     keyring.set_password(f"{_KEYRING_SERVICE}-{api_name}", "default", api_key)
+
+
+def _delete_api_key(api_name: str) -> bool:
+    try:
+        keyring.delete_password(f"{_KEYRING_SERVICE}-{api_name}", "default")
+        return True
+    except PasswordDeleteError:
+        return False
 
 
 def ip_info_keys() -> None:
@@ -46,6 +55,7 @@ def ip_info_keys() -> None:
             print(f"\n--- {display_name} ---")
             print("1. Show stored key")
             print("2. Set / replace key")
+            print("3. Delete key")
             print("b. Back")
 
             action = input("Choose an option: ").strip().lower()
@@ -59,6 +69,13 @@ def ip_info_keys() -> None:
                     print("✅ Key saved.")
                 else:
                     print("⚠️  Empty key - nothing saved.")
+            elif action == "3":
+                confirm = input(f"Delete key for {display_name}? [y/N]: ").strip().lower()
+                if confirm == "y":
+                    if _delete_api_key(api_name):
+                        print("🗑️  Key deleted.")
+                    else:
+                        print("⚠️  No key stored.")
             elif action in {"b", "back"}:
                 break
             else:

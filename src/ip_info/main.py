@@ -166,9 +166,9 @@ def cli():
         "--format",
         "--output_format",
         dest = "output_format",
-        choices = ["json", "table", "none"],
+        choices = ["rawjson", "jsontable", "table", "none"],
         default = "table",
-        help = "Output format: json, table, none (query and add to database, but no output)"
+        help = "Output format: rawjson, jsontable, table, none (query and add to database, but no output)"
     )
     parser.add_argument(
         "--api",
