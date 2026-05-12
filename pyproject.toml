@@ -21,7 +21,6 @@ dependencies = [
 [project.scripts]
 ip_info = "ip_info.main:cli"
 ipi = "ip_info.main:cli"
-import_ip2proxy = "ip_info.datasets.ip2proxy:cli"
 ip_info_keys = "ip_info.keys:ip_info_keys"
 
 [tool.pytest.ini_options]
