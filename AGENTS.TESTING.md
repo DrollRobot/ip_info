@@ -10,6 +10,12 @@ uv run ruff check .                   # lint
 uv run ruff format .                  # apply ruff formatting
 uv run mypy                           # type check (targets set in pyproject.toml)
 
+# if package requires cross-platform support: type check the other OS targets
+# (bare `uv run mypy` above only checks the host platform)
+uv run mypy --platform win32          # type check as Windows
+uv run mypy --platform darwin         # type check as macOS
+uv run mypy --platform linux          # type check as Linux
+
 # tests
 uv run pytest -m "not integration"    # offline tests
 uv run pytest                         # online and offline tests (when credentialed)

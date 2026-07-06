@@ -8,14 +8,14 @@ on:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
-      - 'src/**'              # if using mkdocstrings (below)
+      - 'src/**'
 
 permissions:
-  contents: write            # gh-deploy needs to push to gh-pages
+  contents: write
 
 concurrency:
   group: pages
-  cancel-in-progress: false  # let an in-flight deploy finish
+  cancel-in-progress: false
 
 jobs:
   deploy:

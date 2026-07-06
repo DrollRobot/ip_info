@@ -16,7 +16,9 @@ so that only real drift is reported:
 Each baseline file is strict (drift is an error) or lenient (expected to
 diverge; reported for review only), and required or optional (optional
 features such as mkdocs or the credential helpers may be deleted from a
-project). Files the project adds on top of the template are ignored.
+project). A few files (e.g. the README) are checked for existence only, as
+the project rewrites their contents wholesale. Files the project adds on top
+of the template are ignored.
 
 Before comparing, the script checks its own version on both sides and offers
 to update the project's copy from the template when they differ, so the
@@ -27,7 +29,7 @@ positional path (default: a sibling folder with the template's name):
 
     uv run scripts/compare_to_template.py
     uv run scripts/compare_to_template.py C:/dev/TEMPLATE-CLONE
-    uv run scripts/compare_to_template.py --diff        # show unified diffs
+    uv run scripts/compare_to_template.py --diff        # open diffs in VS Code
     uv run scripts/compare_to_template.py --all         # also list matching files
     uv run scripts/compare_to_template.py --no-update   # CI: never write anything
 
@@ -39,9 +41,13 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import os
+import platform
 import re
+import shlex
 import shutil
 import sys
+import tempfile
 import tomllib
 from dataclasses import dataclass
 from fnmatch import fnmatch
@@ -53,7 +59,7 @@ import _cli as cli
 # Version of this helper script itself. Bump on every change so copies in other
 # repos can be compared: patch = bugfix, minor = new flag/behavior, major =
 # breaking CLI change.
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 # The template's identity tokens. Built from pieces so that a child project's
 # rename_project.py / set_github_user.py runs (which string-replace these
@@ -90,11 +96,17 @@ class BaselineFile:
             deletable optional features).
         strict: Whether content drift is an error (``False`` for files that
             are expected to diverge and are reported for review only).
+        compare_content: Whether to compare the file's contents at all. When
+            ``False`` only the file's existence is checked -- a present file is
+            a match whatever its contents, and a missing required one is drift;
+            the ``strict`` flag is then irrelevant. Used for files the project
+            is meant to rewrite wholesale, such as the README.
     """
 
     path: str
     required: bool = True
     strict: bool = True
+    compare_content: bool = True
 
 
 # Every tracked template file is either listed here or matched by the
@@ -133,7 +145,7 @@ MANIFEST: tuple[BaselineFile, ...] = (
     BaselineFile("CLAUDE.md"),
     BaselineFile("CONTRIBUTING.md"),
     BaselineFile("SECURITY.md"),
-    BaselineFile("README.md", strict=False),  # rewritten per project
+    BaselineFile("README.md", compare_content=False),  # rewritten per project: only check it exists
     # Project configuration: always diverges (version, description, deps).
     BaselineFile("pyproject.toml", strict=False),
     # Dev helper scripts (each carries its own __version__).
@@ -141,6 +153,8 @@ MANIFEST: tuple[BaselineFile, ...] = (
     BaselineFile(SELF_REL),
     BaselineFile("scripts/complete_worktree.py"),
     BaselineFile("scripts/new_worktree.py"),
+    BaselineFile("scripts/open_claude_settings.py"),
+    BaselineFile("scripts/open_gitignore.py"),
     BaselineFile("scripts/push_new_tag_to_main.py"),
     BaselineFile("scripts/remove_worktree.py"),
     BaselineFile("scripts/setup_credentials.py", required=False),  # credentials feature
@@ -651,6 +665,9 @@ def compare_one(entry: BaselineFile, ctx: CompareContext) -> Comparison:
     if not project_path.is_file():
         return Comparison(entry, project_rel, "missing" if entry.required else "absent")
 
+    if not entry.compare_content:
+        return Comparison(entry, project_rel, "match", " (exists; contents not compared)")
+
     template_raw = template_path.read_bytes()
     project_raw = project_path.read_bytes()
     strict = effective_strict(entry, has_mkdocs=ctx.has_mkdocs)
@@ -722,7 +739,16 @@ def parse_args() -> argparse.Namespace:
         help="path to the other repository (default: a sibling folder with the template's name)",
     )
     parser.add_argument(
-        "--diff", action="store_true", help="show unified diffs for every differing file"
+        "--diff",
+        action="store_true",
+        help="open each differing file as a diff in VS Code (falls back to unified "
+        "diffs in the terminal when the 'code' CLI is not on PATH)",
+    )
+    parser.add_argument(
+        "--diff-tool",
+        default=None,
+        metavar="CMD",
+        help="command used to open --diff pairs (default: 'code'); e.g. 'codium' or 'cursor'",
     )
     parser.add_argument(
         "--all", action="store_true", help="list every baseline file, including matches"
@@ -977,6 +1003,135 @@ def print_diffs(results: list[Comparison]) -> None:
                 print(line)
 
 
+def resolve_code(explicit: str | None) -> list[str] | None:
+    """Resolve the command used to open diff pairs in an editor.
+
+    Args:
+        explicit: The ``--diff-tool`` value, if given (e.g. ``"codium"``).
+
+    Returns:
+        The command split into arguments, or ``None`` when no explicit tool was
+        given and ``code`` is not on ``PATH`` (the caller then falls back to
+        printing diffs in the terminal).
+    """
+    if explicit and explicit.strip():
+        return shlex.split(explicit, posix=(os.name != "nt"))
+    if shutil.which("code"):
+        return ["code"]
+    return None
+
+
+def launch_argv(argv: list[str]) -> list[str]:
+    """Adapt an editor command line so it launches on the current platform.
+
+    On Windows, VS Code's ``code`` entry point is a batch file (``code.cmd``)
+    that ``subprocess`` cannot run without a shell, so such commands are routed
+    through ``cmd /c``. On other platforms the command is returned unchanged.
+
+    Args:
+        argv: The command and its arguments, editor first.
+
+    Returns:
+        A command line suitable for :func:`subprocess.run` on this platform.
+    """
+    # platform.system() (unlike os.name/sys.platform) is not constant-folded by
+    # type checkers, so this Windows branch stays analyzable on every platform.
+    if platform.system() == "Windows" and argv:
+        resolved = shutil.which(argv[0])
+        if resolved and Path(resolved).suffix.lower() in (".cmd", ".bat"):
+            return ["cmd", "/c", resolved, *argv[1:]]
+    return argv
+
+
+def diff_files_for(results: list[Comparison], base: Path) -> list[tuple[Path, Path]]:
+    """Write the normalized texts of each differing text file under ``base``.
+
+    The normalized texts are the same ones the terminal diff compares, so
+    expected renames do not appear. Binary differences are skipped (they have no
+    normalized text). The template copy is written under ``base/template/`` and
+    the project copy under ``base/project/`` so the two sides stay
+    distinguishable when a diff tool shows their paths.
+
+    Args:
+        results: Comparison results in manifest order.
+        base: Directory to write the temporary copies into.
+
+    Returns:
+        One ``(template_path, project_path)`` pair per differing text file, in
+        manifest order.
+    """
+    pairs: list[tuple[Path, Path]] = []
+    for result in results:
+        if result.status not in ("modified", "review"):
+            continue
+        if result.template_norm is None or result.project_norm is None:
+            continue
+        left = base / "template" / result.entry.path
+        right = base / "project" / result.project_rel
+        left.parent.mkdir(parents=True, exist_ok=True)
+        right.parent.mkdir(parents=True, exist_ok=True)
+        left.write_text(result.template_norm, encoding="utf-8")
+        right.write_text(result.project_norm, encoding="utf-8")
+        pairs.append((left, right))
+    return pairs
+
+
+def open_diffs_in_vscode(results: list[Comparison], code_argv: list[str]) -> None:
+    """Open each differing text file as a side-by-side diff in VS Code.
+
+    Writes the normalized texts to a temporary directory and opens each pair
+    with ``<tool> --diff``. The temp files are deliberately left in place: the
+    editor reads them asynchronously, well after this process returns.
+
+    Args:
+        results: Comparison results in manifest order.
+        code_argv: The resolved diff-tool command (see :func:`resolve_code`).
+    """
+    binaries = [
+        result.entry.path
+        for result in results
+        if result.status in ("modified", "review")
+        and (result.template_norm is None or result.project_norm is None)
+    ]
+    for name in binaries:
+        cli.warn(f"  Skipping binary file (no diff): {name}")
+
+    base = Path(tempfile.mkdtemp(prefix="compare_to_template_"))
+    pairs = diff_files_for(results, base)
+    if not pairs:
+        if not binaries:
+            cli.warn("  No text differences to open.")
+        return
+
+    cli.info("Diff files", str(base))
+    failures = 0
+    for left, right in pairs:
+        if cli.run_ok(launch_argv([*code_argv, "--diff", str(left), str(right)])) != 0:
+            failures += 1
+    if failures:
+        cli.warn(f"  {failures} diff(s) failed to open.")
+    cli.success(f"  Opened {len(pairs) - failures} diff(s) with {code_argv[0]}.")
+
+
+def show_diffs(results: list[Comparison], diff_tool: str | None) -> None:
+    """Present the diffs: open them in VS Code, or print them if it is absent.
+
+    Args:
+        results: Comparison results in manifest order.
+        diff_tool: The ``--diff-tool`` override, or ``None`` to auto-detect
+            ``code``.
+    """
+    code_argv = resolve_code(diff_tool)
+    if code_argv is None:
+        cli.warn("  VS Code CLI ('code') not found on PATH; printing diffs in the terminal.")
+        cli.warn("  Install it (VS Code > Command Palette > Shell Command: Install 'code'),")
+        cli.warn("  or pass --diff-tool to name another editor.")
+        print_diffs(results)
+        return
+    cli.section("Diffs (VS Code)")
+    open_diffs_in_vscode(results, code_argv)
+
+
 def main() -> None:
     """Run the template comparison."""
     args = parse_args()
@@ -1008,7 +1163,7 @@ def main() -> None:
     cli.section("Comparison")
     print_results(results, show_all=args.all)
     if args.diff:
-        print_diffs(results)
+        show_diffs(results, args.diff_tool)
 
     counts = {status: sum(1 for r in results if r.status == status) for status in _STATUS_COLORS}
     cli.section("Summary")

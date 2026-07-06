@@ -35,12 +35,10 @@ conventional-commit messages. Make the most recent commit subject a clean
 `type(scope): summary` — it stands in for the PR title.
 
 **2. Write the PR description to `PR.md`**
-Write a real description to `PR.md` at the worktree root, using the template
-below. Add `Closes #N` if the slug encodes an issue. Do not commit `PR.md`.
-
-**PR body template** (write this to `PR.md`)
-Use `.github/pull_request_template.md` as a template, but write it in the style
-of a human summarizing the work, not a checklist for the contributor.
+- Write a real description to `PR.md` at the worktree root, using
+  `.github/PULL_REQUEST_TEMPLATE.md` as a template, but write it in the style
+  of a human summarizing the work, not a checklist for the contributor.
+- Add `Closes #N` if the slug encodes an issue. Do not commit `PR.md`.
 
 **3. Stop and tell the user**
 Report that everything is committed and `PR.md` is written, then stop. The user
