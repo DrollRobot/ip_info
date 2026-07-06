@@ -474,7 +474,7 @@ wheels = [
 
 [[package]]
 name = "ip-info"
-version = "1.7.1"
+version = "1.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "ipinfo" },
