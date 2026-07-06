@@ -27,3 +27,15 @@ def test_validate_ips(
     expected: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
 ) -> None:
     assert _validate_ip_addresses(user_input=raw, verbose=False) == expected
+
+
+def test_validate_ips_verbose_prints(capsys: pytest.CaptureFixture[str]) -> None:
+    result = _validate_ip_addresses(
+        user_input=["8.8.8.8", "8.8.8.8", "10.0.0.1", "not-an-ip"],
+        verbose=True,
+    )
+    assert result == [ipaddress.ip_address("8.8.8.8")]
+    out = capsys.readouterr().out
+    assert "Removed duplicate IP: 8.8.8.8" in out
+    assert "Removed non-public IP: 10.0.0.1" in out
+    assert "Removed invalid IP: not-an-ip" in out

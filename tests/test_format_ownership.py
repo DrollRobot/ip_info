@@ -1,6 +1,6 @@
 import pytest
 
-from ip_info._format_ownership import _format_ownership
+from ip_info._format_ownership import _format_ownership, _normalize_text
 
 
 @pytest.mark.parametrize(
@@ -18,3 +18,8 @@ from ip_info._format_ownership import _format_ownership
 )
 def test_format_ownership(row: dict[str, str], expected: str) -> None:
     assert _format_ownership(row) == expected
+
+
+def test_normalize_text_rejects_non_str() -> None:
+    with pytest.raises(TypeError, match="text must be a str"):
+        _normalize_text(123)  # type: ignore[arg-type]

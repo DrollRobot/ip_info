@@ -87,7 +87,7 @@ def ipregistryco(
                 flags_strings.append("anonymous")
             # attacker
             if result.get("security", {}).get("is_attacker", {}):
-                flags_strings.append("anoattackernymous")
+                flags_strings.append("attacker")
             # bogon
             if result.get("security", {}).get("is_bogon", {}):
                 flags_strings.append("bogon")

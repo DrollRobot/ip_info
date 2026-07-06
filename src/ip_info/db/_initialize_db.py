@@ -8,7 +8,7 @@ from ip_info.config import IP_TABLE_NAME, TABLES
 # register adapter: Convert aware datetime objects to ISO formatted strings.
 def adapt_datetime(dt: datetime) -> str:
     if dt.tzinfo is None:
-        raise ValueError("Naive datetimes are not queries. Use a timezone aware datetime.")
+        raise ValueError("Naive datetimes are not accepted. Use a timezone aware datetime.")
     return dt.isoformat()
 
 

@@ -1,3 +1,4 @@
+import pyperclip
 import pytest
 
 from ip_info._parse_clipboard import parse_clipboard
@@ -18,3 +19,13 @@ def test_parse_clipboard(monkeypatch: pytest.MonkeyPatch) -> None:
         "10.0.0.1",
         "2603:1036:5:413::5",
     }
+
+
+def test_parse_clipboard_error_exits(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise_paste() -> str:
+        raise pyperclip.PyperclipException("no clipboard mechanism")
+
+    monkeypatch.setattr("ip_info._parse_clipboard.pyperclip.paste", _raise_paste)
+    with pytest.raises(SystemExit) as excinfo:
+        parse_clipboard()
+    assert "clipboard error: no clipboard mechanism" in str(excinfo.value)

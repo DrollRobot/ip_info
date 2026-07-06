@@ -35,8 +35,8 @@ def ip2locationio(
         if api_key:
             rate_limits = [
                 {
-                    "query_limit": 1000,
-                    "timeframe": "day",
+                    "query_limit": 50000,
+                    "timeframe": "month",
                     "type": "absolute",
                     "status_code": 10001,
                     "error_text": "Invalid API key or insufficient query.",

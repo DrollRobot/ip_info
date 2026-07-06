@@ -87,7 +87,7 @@ def ipqueryio(
                 flags_strings.append("proxy")
 
             # risk
-            risk = result.get("risk", {}).get("risk_score", {})
+            risk = result.get("risk", {}).get("risk_score", 0)
             if risk != 0:
                 flags_strings.append(f"risk:{risk}")
 
