@@ -1,11 +1,5 @@
-
-def ask_yn(
-    question: str,
-    *,
-    true: str = "y"
-) -> bool:
-    """
-    Prompt the user with a yes/no question.
+def ask_yn(question: str, *, true: str = "y") -> bool:
+    """Prompt the user with a yes/no question.
 
     Args:
         question: Text of the prompt.

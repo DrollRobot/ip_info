@@ -1,0 +1,36 @@
+# .github/workflows/docs.yml
+
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'src/**'              # if using mkdocstrings (below)
+
+permissions:
+  contents: write            # gh-deploy needs to push to gh-pages
+
+concurrency:
+  group: pages
+  cancel-in-progress: false  # let an in-flight deploy finish
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          version: "0.11.x"
+
+      - name: Sync docs dependencies
+        run: uv sync --locked --group docs
+
+      - name: Deploy docs
+        run: uv run mkdocs gh-deploy --force

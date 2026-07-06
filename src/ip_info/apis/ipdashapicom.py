@@ -1,10 +1,13 @@
+"""Client and parser for the IP-API.com IP-info API."""
+
 import ipaddress
-import requests
 import sqlite3
 from datetime import datetime
-from typing import Dict
+from typing import Any
 
-from ip_info.config import LOCAL_TIMEZONE
+import requests
+
+from ip_info.config import LOCAL_TIMEZONE, REQUEST_TIMEOUT
 from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
 from ip_info.db._query_db import _check_rate_limits, _is_db_entry_recent
 
@@ -14,15 +17,13 @@ def ipdashapicom(
     api_name: str,
     api_display_name: str,
     ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
-    rate_limits: list[Dict],
+    rate_limits: list[dict[str, Any]],
     api_key: str,
-    db_conn: sqlite3.Connection
+    db_conn: sqlite3.Connection,
 ) -> None:
-    
+    """Query ip-api.com in bulk and store the parsed results for each IP in the database."""
     url = "http://ip-api.com/batch"
-    params = {
-        "fields": "66842623"
-    }
+    params = {"fields": "66842623"}
     max_chunk_size = 100
 
     # filter out ips with recent entries in database
@@ -32,7 +33,6 @@ def ipdashapicom(
 
     # split ips into chunks for bulk query
     for i in range(0, len(ips_to_query), max_chunk_size):
-
         # check rate limits
         if _check_rate_limits(api_name, rate_limits, db_conn):
             print("Rate limit reached. Skipping query.")
@@ -47,12 +47,15 @@ def ipdashapicom(
                 print(f"Querying {api_display_name} for {chunk[0]}")
             else:
                 print(f"Querying {api_display_name} for {len(chunk)} IPs")
-            response = requests.post(url, params=params, json=chunk)
+            response = requests.post(url, params=params, json=chunk, timeout=REQUEST_TIMEOUT)
             _insert_query_info(api_name, response, db_conn)
 
             # rate limit response
             if response.status_code != 200:
-                print(f"Received status code {response.status_code}, message {response.text}. Skipping query")
+                print(
+                    f"Received status code {response.status_code}, "
+                    f"message {response.text}. Skipping query"
+                )
                 continue
 
             response.raise_for_status()
@@ -60,7 +63,7 @@ def ipdashapicom(
         except requests.exceptions.RequestException as e:
             print(f"Error querying {api_display_name}: {e}")
             return None
-        
+
         # process each result in the batch
         for result in results:
             query_ip = result.get("query")
@@ -84,10 +87,7 @@ def ipdashapicom(
             if result.get("proxy", {}):
                 flags_strings.append("proxy")
 
-            if flags_strings:
-                flags_string = ", ".join(flags_strings)
-            else:
-                flags_string = "-"
+            flags_string = ", ".join(flags_strings) if flags_strings else "-"
 
             entry = {
                 "timestamp": last_request_time,
@@ -103,6 +103,6 @@ def ipdashapicom(
                 "as_name": result.get("asname", ""),
                 "hostname": "",
                 "flags": flags_string,
-                "raw_json": result
+                "raw_json": result,
             }
             _insert_ip_info(entries=[entry], db_conn=db_conn)

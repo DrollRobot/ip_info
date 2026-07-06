@@ -1,11 +1,12 @@
 import ipaddress
 import json
 import sqlite3
+
 import tabulate
 
-from ip_info.db._query_db import _fetch_ip_info
-from ip_info._format_timestamp import _format_timestamp
 from ip_info._format_ownership import _format_ownership
+from ip_info._format_timestamp import _format_timestamp
+from ip_info.db._query_db import _fetch_ip_info
 
 DISPLAY_COLUMNS = [
     "api_display_name",
@@ -16,14 +17,14 @@ DISPLAY_COLUMNS = [
     "flags",
 ]
 
+
 def display_ip_info(
     *,
     ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
     output_format: str,
     db_conn: sqlite3.Connection,
 ) -> None:
-    """
-    print the stored api results for each ip in *ip_addresses*.
+    """Print the stored api results for each ip in *ip_addresses*.
 
     Args:
         ip_addresses: one or more ip strings
@@ -34,15 +35,10 @@ def display_ip_info(
             - "table"     → compact tabular summary (default)
             - "none"      → do nothing
     """
-
     jsontable_result = {}
 
     for ip_address in ip_addresses:
-        rows = _fetch_ip_info(
-            api_names=["all"],
-            ip_address=ip_address, 
-            db_conn=db_conn
-        )
+        rows = _fetch_ip_info(api_names=["all"], ip_address=ip_address, db_conn=db_conn)
 
         if not rows:
             print(f"No data for {ip_address}.")
@@ -51,7 +47,7 @@ def display_ip_info(
         if output_format == "rawjson":
             print(ip_address)
             for row in rows:
-                ts   = _format_timestamp(row["timestamp"])
+                ts = _format_timestamp(row["timestamp"])
                 disp = row["api_display_name"]
                 print(f"Showing raw JSON return for {ip_address} from {disp} on {ts}")
                 print(json.dumps(json.loads(row.get("raw_json", {})), indent=4))

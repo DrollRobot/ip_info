@@ -1,7 +1,9 @@
+"""Interactive keyring-backed manager for storing and retrieving provider API keys."""
+
 import getpass
+
 import keyring
 from keyring.errors import PasswordDeleteError
-from typing import List
 
 from ip_info.config import API_METADATA
 
@@ -11,7 +13,7 @@ _KEYRING_SERVICE = "ip_info"
 def _get_api_key(api_name: str) -> str | None:
     return keyring.get_password(f"{_KEYRING_SERVICE}-{api_name}", "default")
 
- 
+
 def _set_api_key(api_name: str, api_key: str) -> None:
     keyring.set_password(f"{_KEYRING_SERVICE}-{api_name}", "default", api_key)
 
@@ -25,11 +27,8 @@ def _delete_api_key(api_name: str) -> bool:
 
 
 def ip_info_keys() -> None:
-    """
-    Interactive terminal menu for viewing or updating API keys.
-    """
-
-    api_names: List[str] = list(API_METADATA.keys())
+    """Interactive terminal menu for viewing or updating API keys."""
+    api_names: list[str] = list(API_METADATA.keys())
 
     while True:
         print("\n=== API KEY MANAGER ===")
@@ -46,7 +45,7 @@ def ip_info_keys() -> None:
         try:
             api_index = int(sel) - 1
             api_name = api_names[api_index]
-        except (ValueError, IndexError):
+        except ValueError, IndexError:
             print("⚠️  Invalid choice.")
             continue
 
@@ -79,7 +78,7 @@ def ip_info_keys() -> None:
             elif action in {"b", "back"}:
                 break
             else:
-              print("⚠️  Invalid choice.")
+                print("⚠️  Invalid choice.")
 
 
 if __name__ == "__main__":

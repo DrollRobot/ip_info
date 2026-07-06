@@ -1,0 +1,10 @@
+# Normalize all text files to LF on commit and checkout.
+# This prevents the mixed-line-ending pre-commit hook from firing on every commit
+# when core.autocrlf=true is set on Windows.
+* text=auto eol=lf
+
+# Explicitly binary -- never touch line endings
+*.png binary
+*.jpg binary
+*.ico binary
+*.svg binary

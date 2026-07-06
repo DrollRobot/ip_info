@@ -1,11 +1,9 @@
 import re
-from typing import Dict
+from typing import Any
 
 
 def _normalize_text(text: str) -> str:
-    """
-    Normalise free-text so string comparisons are reliable.
-    """
+    """Normalise free-text so string comparisons are reliable."""
     if not isinstance(text, str):
         raise TypeError("text must be a str")
 
@@ -18,9 +16,8 @@ def _normalize_text(text: str) -> str:
     return cleaned
 
 
-def _format_ownership(row:Dict) -> str:
-    """Return a canonical ‘ownership’ string from company / ISP / AS-name fields."""
-
+def _format_ownership(row: dict[str, Any]) -> str:
+    """Return a canonical 'ownership' string from company / ISP / AS-name fields."""
     raw_values: list[str] = [
         row.get("company", ""),
         row.get("isp", ""),

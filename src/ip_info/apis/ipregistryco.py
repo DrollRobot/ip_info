@@ -1,10 +1,13 @@
+"""Client and parser for the ipregistry.co IP-info API."""
+
 import ipaddress
-import requests
 import sqlite3
 from datetime import datetime
-from typing import Dict
+from typing import Any
 
-from ip_info.config import LOCAL_TIMEZONE
+import requests
+
+from ip_info.config import LOCAL_TIMEZONE, REQUEST_TIMEOUT
 from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
 from ip_info.db._query_db import _check_rate_limits, _is_db_entry_recent
 
@@ -14,23 +17,20 @@ def ipregistryco(
     api_name: str,
     api_display_name: str,
     ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
-    rate_limits: list[Dict],
+    rate_limits: list[dict[str, Any]],
     api_key: str,
-    db_conn: sqlite3.Connection
+    db_conn: sqlite3.Connection,
 ) -> None:
-    
+    """Query ipregistry.co in bulk for the IP addresses and store parsed results in the database."""
     max_chunk_size = 1024
-    params = {
-        "key": api_key
-    }
+    params = {"key": api_key}
 
     # filter out ips that already have a recent db entry
     ips_to_query = [ip for ip in ip_addresses if not _is_db_entry_recent(api_name, ip, db_conn)]
     if not ips_to_query:
         return
-    
-    for i in range(0, len(ips_to_query), max_chunk_size):
 
+    for i in range(0, len(ips_to_query), max_chunk_size):
         # check rate limits
         if _check_rate_limits(api_name, rate_limits, db_conn):
             print("Rate limit reached. Skipping query.")
@@ -45,12 +45,15 @@ def ipregistryco(
                 print(f"Querying {api_display_name} for {chunk[0]}")
             else:
                 print(f"Querying {api_display_name} for {len(chunk)} IPs")
-            response = requests.get(url, params=params)
+            response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
             _insert_query_info(api_name, response, db_conn)
 
             # rate limit response
             if response.status_code != 200:
-                print(f"Received status code {response.status_code}, message {response.text}. Skipping query")
+                print(
+                    f"Received status code {response.status_code}, "
+                    f"message {response.text}. Skipping query"
+                )
                 continue
 
             response.raise_for_status()
@@ -61,12 +64,8 @@ def ipregistryco(
 
         ### normalize to list
         if isinstance(results, dict):
-            # if results has a sub-element called results, select it
-            if "results" in results:      
-                results = results["results"]
-            # otherwise, wrap single dict in list so for loop will work correctly
-            else:
-                results = [results]
+            # select the nested "results" element if present, else wrap the dict in a list
+            results = results.get("results", [results])
         else:
             raise TypeError("Response format invalid")
 
@@ -74,7 +73,6 @@ def ipregistryco(
         last_request_time = datetime.now(LOCAL_TIMEZONE)
 
         for result in results:
-
             query_ip = result.get("ip")
             if not query_ip:
                 continue
@@ -134,6 +132,6 @@ def ipregistryco(
                 "as_name": result.get("connection", {}).get("asn", ""),
                 "hostname": result.get("connection", {}).get("domain", ""),
                 "flags": flags_string,
-                "raw_json": result
+                "raw_json": result,
             }
             _insert_ip_info(entries=[entry], db_conn=db_conn)

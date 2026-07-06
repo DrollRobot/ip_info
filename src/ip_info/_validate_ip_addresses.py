@@ -1,19 +1,18 @@
 import ipaddress
 
+
 def _validate_ip_addresses(
-    *,
-    user_input: list[str], 
-    verbose: bool = True
+    *, user_input: list[str], verbose: bool = True
 ) -> list[ipaddress.IPv4Address | ipaddress.IPv6Address]:
-    """
-    Validate and filter a list of IPs, keeping only valid public addresses.
+    """Validate and filter a list of IPs, keeping only valid public addresses.
 
     Args:
         user_input: list of strings to validate as IPs
         verbose: if True, print each invalid or non-public IP as it's dropped
 
     Returns:
-        A new list containing only those inputs that parsed as IPv4/IPv6 and are global (public) addresses.
+        A new list containing only those inputs that parsed as IPv4/IPv6 and are global
+        (public) addresses.
     """
     valid_ips: list[ipaddress.IPv4Address | ipaddress.IPv6Address] = []
     seen: set[ipaddress.IPv4Address | ipaddress.IPv6Address] = set()

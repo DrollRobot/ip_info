@@ -1,27 +1,28 @@
+"""Central configuration: API metadata, rate limits, and database schema constants."""
+
 import os
+from typing import Any, Final
 from zoneinfo import ZoneInfo
-from typing import Any, Dict, Final
 
-
-API_METADATA: Dict[str, Dict[str, Any]] = {
+API_METADATA: dict[str, dict[str, Any]] = {
     "abstractapicom": {
         "api_display_name": "AbstractAPI.com",
         "requires_key": True,
         "allows_bulk": False,
         "rate_limits": [
             {
-                "query_limit":   1,
+                "query_limit": 1,
                 "timeframe": "second",
-                "type":      "rolling",
-                "status_code":  429,
-                "error_text":   "Too many requests"
+                "type": "rolling",
+                "status_code": 429,
+                "error_text": "Too many requests",
             },
             {
-                "query_limit":   1000,
+                "query_limit": 1000,
                 "timeframe": "day",
-                "type":      "absolute",
-                "status_code":  422,
-                "error_text":   "Quota reached"
+                "type": "absolute",
+                "status_code": 422,
+                "error_text": "Quota reached",
             },
         ],
     },
@@ -32,11 +33,11 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
         "rate_limits": [
             # no documented short term rate limit
             {
-                "query_limit":   1000,
+                "query_limit": 1000,
                 "timeframe": "day",
-                "type":      "absolute",
-                "status_code":  429,
-                "error_text": "Too many requests"
+                "type": "absolute",
+                "status_code": 429,
+                "error_text": "Too many requests",
             },
         ],
     },
@@ -47,11 +48,11 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
         "rate_limits": [
             # short term rate limit: doesn't allow parallel queries
             {
-                "query_limit":   50,
+                "query_limit": 50,
                 "timeframe": "month",
-                "type":     "absolute",
-                "status_code":  429,
-                "error_text": "Too many requests"
+                "type": "absolute",
+                "status_code": 429,
+                "error_text": "Too many requests",
             },
         ],
     },
@@ -62,11 +63,11 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
         "rate_limits": [
             # no documented short term rate limit
             {
-                "query_limit":   1000,
+                "query_limit": 1000,
                 "timeframe": "day",
-                "type":     "absolute",
-                "status_code":  10001,
-                "error_text": "Invalid API key or insufficient query."
+                "type": "absolute",
+                "status_code": 10001,
+                "error_text": "Invalid API key or insufficient query.",
             },
         ],
     },
@@ -78,15 +79,15 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
             # no documented short term rate limit
             # adding per-minute limit due to excessive 429 failures
             {
-                "query_limit":   2,
+                "query_limit": 2,
                 "timeframe": "minute",
-                "type":      "rolling",
+                "type": "rolling",
             },
             {
-                "query_limit":   1000,
+                "query_limit": 1000,
                 "timeframe": "day",
-                "type":      "absolute",
-                "status_code":  429,
+                "type": "absolute",
+                "status_code": 429,
             },
         ],
     },
@@ -97,11 +98,11 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
         "rate_limits": [
             # no documented short term rate limit
             {
-                "query_limit":   100,
+                "query_limit": 100,
                 "timeframe": "month",
-                "type":      "absolute",
-                "status_code":  104,
-                "error_text": "usage_limit_reached"
+                "type": "absolute",
+                "status_code": 104,
+                "error_text": "usage_limit_reached",
             },
         ],
     },
@@ -112,10 +113,10 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
         "rate_limits": [
             # no documented short term rate limit
             {
-                "query_limit":   1000,
+                "query_limit": 1000,
                 "timeframe": "day",
-                "type":      "absolute",
-                "status_code":  429,
+                "type": "absolute",
+                "status_code": 429,
             },
         ],
     },
@@ -126,9 +127,9 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
         "rate_limits": [
             # no documented short term rate limit
             {
-                "query_limit":   1000,
+                "query_limit": 1000,
                 "timeframe": "day",
-                "type":      "absolute",
+                "type": "absolute",
             },
         ],
     },
@@ -138,11 +139,11 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
         "allows_bulk": True,
         "rate_limits": [
             {
-                "query_limit":   15,
+                "query_limit": 15,
                 "timeframe": "minute",
-                "type":      "rolling",
-                "status_code":  429,
-            },            
+                "type": "rolling",
+                "status_code": 429,
+            },
             # no documented long term rate limit
         ],
     },
@@ -153,11 +154,11 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
         "rate_limits": [
             # no documented short term rate limit
             {
-                "query_limit":   1000,
+                "query_limit": 1000,
                 "timeframe": "day",
-                "type":      "absolute",
-                "status_code":  429,
-                "error_text": "Too many requests"
+                "type": "absolute",
+                "status_code": 429,
+                "error_text": "Too many requests",
             },
         ],
     },
@@ -169,11 +170,11 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
             # no documented rate limits
             # adding this to wait for a minute if 429 returned
             {
-                "query_limit":   1000,
+                "query_limit": 1000,
                 "timeframe": "minute",
-                "type":      "rolling",
-                "status_code":  429,
-                "error_text": "Too many requests"
+                "type": "rolling",
+                "status_code": 429,
+                "error_text": "Too many requests",
             },
         ],
     },
@@ -193,11 +194,11 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
             # no documented rate limits, other than 100k per free account
             # adding this to wait for a minute if 429 returned
             {
-                "query_limit":   1000,
+                "query_limit": 1000,
                 "timeframe": "minute",
-                "type":      "rolling",
-                "status_code":  429,
-                "error_text": "TOO_MANY_REQUESTS"
+                "type": "rolling",
+                "status_code": 429,
+                "error_text": "TOO_MANY_REQUESTS",
             },
         ],
     },
@@ -207,30 +208,31 @@ API_METADATA: Dict[str, Dict[str, Any]] = {
         "allows_bulk": False,
         "rate_limits": [
             {
-                "query_limit":   4,
+                "query_limit": 4,
                 "timeframe": "minute",
-                "type":      "rolling",
-                "status_code":  429,
-                "error_text": "QuotaExceededError"
+                "type": "rolling",
+                "status_code": 429,
+                "error_text": "QuotaExceededError",
             },
             {
-                "query_limit":   500,
+                "query_limit": 500,
                 "timeframe": "day",
-                "type":      "absolute",
+                "type": "absolute",
             },
         ],
     },
 }
 
- 
+
 TIMEZONE_STRING = "America/New_York"
 LOCAL_TIMEZONE = ZoneInfo(TIMEZONE_STRING)
 MAX_AGE = 90
+REQUEST_TIMEOUT = 10  # seconds; timeout for outbound provider HTTP requests
 
 BASE_DIR: Final[str] = os.path.dirname(os.path.abspath(__file__))
-DB_PATH : Final[str] = os.path.join(BASE_DIR, "ip_info.db")
+DB_PATH: Final[str] = os.path.join(BASE_DIR, "ip_info.db")
 
-IP_TABLE_NAME = 'ip_data'
+IP_TABLE_NAME = "ip_data"
 IP_TABLE_COLUMNS = {
     "id": "INTEGER PRIMARY KEY AUTOINCREMENT",
     "timestamp": "TIMESTAMP",
@@ -246,41 +248,29 @@ IP_TABLE_COLUMNS = {
     "as_name": "TEXT",
     "hostname": "TEXT",
     "flags": "TEXT",
-    "raw_json": "TEXT"
+    "raw_json": "TEXT",
 }
-IP_INSERT_ORDER = [
-    column
-    for column in IP_TABLE_COLUMNS.keys()
-    if column != "id"
-]
+IP_INSERT_ORDER = [column for column in IP_TABLE_COLUMNS if column != "id"]
 
 QUERY_TABLE_NAME = "api_queries"
 QUERY_TABLE_COLUMNS = {
-    "id":        "INTEGER PRIMARY KEY AUTOINCREMENT",
-    "api_name":  "TEXT",
+    "id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+    "api_name": "TEXT",
     "timestamp": "TIMESTAMP",
     "status_code": "INTEGER",
     "error_text": "TEXT",
 }
-QUERY_INSERT_ORDER = [
-    column
-    for column in QUERY_TABLE_COLUMNS.keys()
-    if column != "id"
-]
+QUERY_INSERT_ORDER = [column for column in QUERY_TABLE_COLUMNS if column != "id"]
 
-TABLES = [
+TABLES: list[dict[str, Any]] = [
     {
         "name": IP_TABLE_NAME,
         "columns": IP_TABLE_COLUMNS,
-        "indexes": [
-            (f"idx_{IP_TABLE_NAME}", "(api_name, ip_address)")
-        ],
+        "indexes": [(f"idx_{IP_TABLE_NAME}", "(api_name, ip_address)")],
     },
     {
         "name": QUERY_TABLE_NAME,
         "columns": QUERY_TABLE_COLUMNS,
-        "indexes": [
-            (f"idx_{QUERY_TABLE_NAME}", "(api_name, timestamp)")
-        ],
+        "indexes": [(f"idx_{QUERY_TABLE_NAME}", "(api_name, timestamp)")],
     },
 ]

@@ -1,10 +1,13 @@
+"""Client and parser for the ipquery.io IP-info API."""
+
 import ipaddress
-import requests
 import sqlite3
 from datetime import datetime
-from typing import Dict
+from typing import Any
 
-from ip_info.config import LOCAL_TIMEZONE
+import requests
+
+from ip_info.config import LOCAL_TIMEZONE, REQUEST_TIMEOUT
 from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
 from ip_info.db._query_db import _check_rate_limits, _is_db_entry_recent
 
@@ -14,11 +17,11 @@ def ipqueryio(
     api_name: str,
     api_display_name: str,
     ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
-    rate_limits: list[Dict],
+    rate_limits: list[dict[str, Any]],
     api_key: str,
-    db_conn: sqlite3.Connection
+    db_conn: sqlite3.Connection,
 ) -> None:
-    
+    """Query ipquery.io in bulk and store the parsed results for each IP in the database."""
     url_base = "https://api.ipquery.io"
     max_chunk_size = 10000
 
@@ -28,7 +31,6 @@ def ipqueryio(
         return
 
     for i in range(0, len(ips_to_query), max_chunk_size):
-
         # check rate limits
         if _check_rate_limits(api_name, rate_limits, db_conn):
             print("Rate limit reached. Skipping query.")
@@ -44,12 +46,15 @@ def ipqueryio(
                 print(f"Querying {api_display_name} for {chunk[0]}")
             else:
                 print(f"Querying {api_display_name} for {len(chunk)} IPs")
-            response = requests.get(url)
+            response = requests.get(url, timeout=REQUEST_TIMEOUT)
             _insert_query_info(api_name, response, db_conn)
 
             # rate limit response
             if response.status_code != 200:
-                print(f"Received status code {response.status_code}, message {response.text}. Skipping query")
+                print(
+                    f"Received status code {response.status_code}, "
+                    f"message {response.text}. Skipping query"
+                )
                 continue
 
             response.raise_for_status()
@@ -65,7 +70,6 @@ def ipqueryio(
         last_request_time = datetime.now(LOCAL_TIMEZONE)
 
         for result in results:
-
             query_ip = result.get("ip")
 
             ### build flags string
@@ -95,10 +99,7 @@ def ipqueryio(
             if result.get("risk", {}).get("is_vpn", {}):
                 flags_strings.append("vpn")
 
-            if flags_strings:
-                flags_string = ", ".join(flags_strings)
-            else:
-                flags_string = "-"
+            flags_string = ", ".join(flags_strings) if flags_strings else "-"
 
             entry = {
                 "timestamp": last_request_time,
@@ -114,6 +115,6 @@ def ipqueryio(
                 "as_name": result.get("isp", {}).get("asn", ""),
                 "hostname": "",
                 "flags": flags_string,
-                "raw_json": result
+                "raw_json": result,
             }
             _insert_ip_info(entries=[entry], db_conn=db_conn)

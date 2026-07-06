@@ -1,8 +1,10 @@
 import pytest
+
 from ip_info._format_ownership import _format_ownership
 
+
 @pytest.mark.parametrize(
-    "row,expected",
+    ("row", "expected"),
     [
         # de-dupe & preserve order
         ({"company": "Proton AG", "isp": "Proton AG", "as_name": ""}, "Proton AG"),
@@ -14,5 +16,5 @@ from ip_info._format_ownership import _format_ownership
         ({"company": "Acme", "isp": "FooNet", "as_name": "AS123 Foo"}, "Acme, FooNet, AS123 Foo"),
     ],
 )
-def test_format_ownership(row, expected):
+def test_format_ownership(row: dict[str, str], expected: str) -> None:
     assert _format_ownership(row) == expected

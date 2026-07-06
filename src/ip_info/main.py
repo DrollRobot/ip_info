@@ -1,10 +1,13 @@
+"""Command-line entry point: query IP-info providers concurrently and display results."""
+
 import argparse
-from concurrent.futures import ThreadPoolExecutor
 import ipaddress
 import sqlite3
 import sys
 import traceback
-from typing import cast 
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, cast
 
 from ip_info._ask_yn import ask_yn
 from ip_info._display_ip_info import display_ip_info
@@ -13,30 +16,31 @@ from ip_info._validate_ip_addresses import _validate_ip_addresses
 from ip_info.apis.abstractapicom import abstractapicom  # noqa: F401
 from ip_info.apis.abuseipdbcom import abuseipdbcom  # noqa: F401
 from ip_info.apis.criminalipio import criminalipio  # noqa: F401
-from ip_info.apis.ipdashapicom import ipdashapicom  # noqa: F401
 from ip_info.apis.ip2locationio import ip2locationio  # noqa: F401
 from ip_info.apis.ipapico import ipapico  # noqa: F401
 from ip_info.apis.ipapicom import ipapicom  # noqa: F401
 from ip_info.apis.ipapiis import ipapiis  # noqa: F401
 from ip_info.apis.ipapiorg import ipapiorg  # noqa: F401
+from ip_info.apis.ipdashapicom import ipdashapicom  # noqa: F401
 from ip_info.apis.ipgeolocationio import ipgeolocationio  # noqa: F401
 from ip_info.apis.ipinfoio import ipinfoio  # noqa: F401
 from ip_info.apis.ipqueryio import ipqueryio  # noqa: F401
 from ip_info.apis.ipregistryco import ipregistryco  # noqa: F401
 from ip_info.apis.virustotalcom import virustotalcom  # noqa: F401
-from ip_info.config import DB_PATH, API_METADATA
-from ip_info.db._initialize_db import initialize_db, ensure_columns_exist
+from ip_info.config import API_METADATA, DB_PATH
+from ip_info.db._initialize_db import ensure_columns_exist, initialize_db
 from ip_info.keys import _get_api_key
 
-  
+
 def run_api_function_threadsafe(
-    api_function,
+    api_function: Callable[..., None],
     api_name: str,
     api_display_name: str,
-    ip_addresses,
-    rate_limits,
-    api_key,
-):
+    ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
+    rate_limits: list[dict[str, Any]],
+    api_key: str | None,
+) -> None:
+    """Run one provider function on its own DB connection, isolating failures per thread."""
     db_conn = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
     try:
         api_function(
@@ -54,13 +58,8 @@ def run_api_function_threadsafe(
         db_conn.close()
 
 
-def main(
-    *, 
-    user_input: list[str], 
-    query_apis: list[str], 
-    output_format="table"
-    ):
-
+def main(*, user_input: list[str], query_apis: list[str], output_format: str = "table") -> None:
+    """Validate the input IPs, query the selected APIs concurrently, and display results."""
     # open database
     db_conn = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
 
@@ -71,9 +70,8 @@ def main(
 
         # if input supplied as cli argument
         if user_input:
-            ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address] = _validate_ip_addresses(
-                user_input=user_input, 
-                verbose=True
+            ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address] = (
+                _validate_ip_addresses(user_input=user_input, verbose=True)
             )
         # if no cli input, check clipboard
         else:
@@ -81,10 +79,7 @@ def main(
             if not user_input:
                 sys.exit("No IP addresses supplied and none detected in clipboard.")
 
-            ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address] = _validate_ip_addresses(
-                user_input=user_input, 
-                verbose=False
-            )
+            ip_addresses = _validate_ip_addresses(user_input=user_input, verbose=False)
             ip_addresses_string: list[str] = [str(ip) for ip in ip_addresses]
             print(f"Found in clipboard: {ip_addresses_string}")
             if ask_yn("Query these IPs?", true="n"):
@@ -143,45 +138,44 @@ def main(
         db_conn.close()
 
 
-def cli():
-
-    parser = argparse.ArgumentParser(
-        description = "Query IP reputation APIs and store responses."
-    )
+def cli() -> None:
+    """Parse command-line arguments and invoke main()."""
+    parser = argparse.ArgumentParser(description="Query IP reputation APIs and store responses.")
     parser.add_argument(
-        "ip_addresses_pos",
-        nargs="*",
-        help="The IP address(es) to query. (positional argument)"
+        "ip_addresses_pos", nargs="*", help="The IP address(es) to query. (positional argument)"
     )
     parser.add_argument(
         "--ip",
         "--ips",
         "--ip_address",
         "--ip_addresses",
-        dest = "ip_addresses_arg",
-        help = "The IP address(es) to query.",
-        nargs = '+'
+        dest="ip_addresses_arg",
+        help="The IP address(es) to query.",
+        nargs="+",
     )
     parser.add_argument(
         "--format",
         "--output_format",
-        dest = "output_format",
-        choices = ["rawjson", "jsontable", "table", "none"],
-        default = "table",
-        help = "Output format: rawjson, jsontable, table, none (query and add to database, but no output)"
+        dest="output_format",
+        choices=["rawjson", "jsontable", "table", "none"],
+        default="table",
+        help=(
+            "Output format: rawjson, jsontable, table, none "
+            "(query and add to database, but no output)"
+        ),
     )
     parser.add_argument(
         "--api",
         "--apis",
         "--query_api",
         "--query_apis",
-        dest = "query_apis",
-        nargs   = "+",
-        choices = ["all", "bulk", "none"] + list(API_METADATA.keys()),
-        default = ["all"],
-        help = "Comma separated list of APIs to query."
+        dest="query_apis",
+        nargs="+",
+        choices=["all", "bulk", "none", *list(API_METADATA.keys())],
+        default=["all"],
+        help="Comma separated list of APIs to query.",
     )
-    
+
     args = parser.parse_args()
 
     # parse ips from positional or named argument, normalize to list
@@ -198,12 +192,9 @@ def cli():
         ]
     elif args.query_apis == ["none"]:
         args.query_apis = []
-    
-    main(
-        user_input = user_input,
-        query_apis = args.query_apis,
-        output_format = args.output_format
-    )
+
+    main(user_input=user_input, query_apis=args.query_apis, output_format=args.output_format)
+
 
 if __name__ == "__main__":
     cli()
