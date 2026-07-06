@@ -9,7 +9,7 @@ import requests
 
 from ip_info.config import LOCAL_TIMEZONE, REQUEST_TIMEOUT
 from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
-from ip_info.db._query_db import _check_rate_limits, _is_db_entry_recent
+from ip_info.db._query_db import _is_db_entry_recent, _respect_rate_limit
 
 
 def ip2locationio(
@@ -42,8 +42,7 @@ def ip2locationio(
                     "error_text": "Invalid API key or insufficient query.",
                 },
             ]
-        if _check_rate_limits(api_name, rate_limits, db_conn):
-            print("Rate limit reached. Skipping query.")
+        if _respect_rate_limit(api_name, api_display_name, rate_limits, db_conn):
             continue
 
         params = {

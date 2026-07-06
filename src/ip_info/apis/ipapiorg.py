@@ -9,7 +9,7 @@ import requests
 
 from ip_info.config import LOCAL_TIMEZONE, REQUEST_TIMEOUT
 from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
-from ip_info.db._query_db import _check_rate_limits, _is_db_entry_recent
+from ip_info.db._query_db import _is_db_entry_recent, _respect_rate_limit
 
 
 def ipapiorg(
@@ -32,9 +32,8 @@ def ipapiorg(
 
     # split ips into chunks
     for i in range(0, len(ips_to_query), max_chunk_size):
-        # check rate limits
-        if _check_rate_limits(api_name, rate_limits, db_conn):
-            print("Rate limit reached. Skipping query.")
+        # wait until the rate limit clears, or skip if the wait is too long
+        if _respect_rate_limit(api_name, api_display_name, rate_limits, db_conn):
             continue
 
         # build request params
