@@ -228,6 +228,7 @@ TIMEZONE_STRING = "America/New_York"
 LOCAL_TIMEZONE = ZoneInfo(TIMEZONE_STRING)
 MAX_AGE = 90
 REQUEST_TIMEOUT = 10  # seconds; timeout for outbound provider HTTP requests
+MAX_RATE_LIMIT_WAIT = 1  # seconds; longest we block-wait on a rate limit before skipping
 
 BASE_DIR: Final[str] = os.path.dirname(os.path.abspath(__file__))
 DB_PATH: Final[str] = os.path.join(BASE_DIR, "ip_info.db")
