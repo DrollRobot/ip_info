@@ -1,5 +1,6 @@
 site_name: ip_info
 site_description: "Queries multiple providers for information about IP addresses."
+site_url: https://DrollRobot.github.io/ip_info/
 repo_url: https://github.com/DrollRobot/ip_info
 
 theme:
@@ -12,6 +13,9 @@ theme:
 
 nav:
   - Home: index.md
+  - Install: install.md
+  - Usage: usage.md
+  - Providers: providers.md
   - Reference: reference/ip_info.md
 
 markdown_extensions:
