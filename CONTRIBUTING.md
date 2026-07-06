@@ -40,7 +40,6 @@ uv run mkdocs gh-deploy --force
 
 - `src/ip_info/` -- library source (src layout)
 - `src/ip_info/apis/` -- one module per IP-info provider (client + parser)
-- `src/ip_info/datasets/` -- bulk dataset importers (e.g. IP2Proxy)
 - `src/ip_info/db/` -- SQLite cache: init, insert, query
 - `tests/` -- pytest test suite
 - `docs/` -- MkDocs documentation source
