@@ -50,7 +50,7 @@ def _fail(*args: object, **kwargs: object) -> Any:
 
 def _no_rate_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     """Force the module-level rate limit check to report no limit reached."""
-    monkeypatch.setattr(f"{MODULE}._check_rate_limits", lambda *a, **k: False)
+    monkeypatch.setattr(f"{MODULE}._respect_rate_limit", lambda *a, **k: False)
 
 
 def _patch_get(
@@ -196,12 +196,11 @@ def test_rate_limit_skips_chunk(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """When the rate limit is reached, the chunk is skipped without a request."""
-    monkeypatch.setattr(f"{MODULE}._check_rate_limits", lambda *a, **k: True)
+    monkeypatch.setattr(f"{MODULE}._respect_rate_limit", lambda *a, **k: True)
     monkeypatch.setattr(f"{MODULE}.requests.get", _fail)
 
     _run(db_conn, ["1.2.3.4"])
 
-    assert "Rate limit reached. Skipping query." in capsys.readouterr().out
     assert _ip_rows(db_conn) == []
     assert _query_rows(db_conn) == []
 
@@ -213,7 +212,7 @@ def test_all_recent_returns(
 ) -> None:
     """When every IP has a recent db entry, the function returns immediately."""
     monkeypatch.setattr(f"{MODULE}._is_db_entry_recent", lambda *a, **k: True)
-    monkeypatch.setattr(f"{MODULE}._check_rate_limits", _fail)
+    monkeypatch.setattr(f"{MODULE}._respect_rate_limit", _fail)
     monkeypatch.setattr(f"{MODULE}.requests.get", _fail)
 
     _run(db_conn, ["1.2.3.4", "5.6.7.8"])

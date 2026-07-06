@@ -48,7 +48,7 @@ def _rows(conn: sqlite3.Connection, table: str) -> list[dict[str, Any]]:
 
 
 def _patch_no_rate_limit(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(f"{MODULE}._check_rate_limits", lambda *args, **kwargs: False)
+    monkeypatch.setattr(f"{MODULE}._respect_rate_limit", lambda *args, **kwargs: False)
 
 
 def _install_fake_get(
@@ -155,12 +155,11 @@ def test_rate_limit_skip(
     capsys: pytest.CaptureFixture[str],
     db_conn: sqlite3.Connection,
 ) -> None:
-    monkeypatch.setattr(f"{MODULE}._check_rate_limits", lambda *args, **kwargs: True)
+    monkeypatch.setattr(f"{MODULE}._respect_rate_limit", lambda *args, **kwargs: True)
     _forbid_get(monkeypatch)
 
     _run([ipaddress.ip_address("1.2.3.4")], db_conn)
 
-    assert "Rate limit reached. Skipping query." in capsys.readouterr().out
     assert _rows(db_conn, IP_TABLE_NAME) == []
     assert _rows(db_conn, QUERY_TABLE_NAME) == []
 

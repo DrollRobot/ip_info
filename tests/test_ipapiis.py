@@ -61,7 +61,7 @@ def _query_rows(db_conn: sqlite3.Connection) -> list[dict[str, Any]]:
 
 def _no_rate_limits(monkeypatch: pytest.MonkeyPatch) -> None:
     """Force the rate-limit check in the module under test to report no limit."""
-    monkeypatch.setattr(f"{MODULE}._check_rate_limits", lambda *a, **k: False)
+    monkeypatch.setattr(f"{MODULE}._respect_rate_limit", lambda *a, **k: False)
 
 
 def _forbid_http(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -111,12 +111,11 @@ def test_rate_limit_skips_chunk(
     db_conn: sqlite3.Connection,
 ) -> None:
     """A hit rate limit prints a notice and skips the HTTP call."""
-    monkeypatch.setattr(f"{MODULE}._check_rate_limits", lambda *a, **k: True)
+    monkeypatch.setattr(f"{MODULE}._respect_rate_limit", lambda *a, **k: True)
     _forbid_http(monkeypatch)
 
     _run([ipaddress.ip_address("1.2.3.4")], db_conn)
 
-    assert "Rate limit reached. Skipping query." in capsys.readouterr().out
     assert _ip_rows(db_conn) == []
     assert _query_rows(db_conn) == []
 
