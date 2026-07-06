@@ -52,9 +52,8 @@ testpaths = ["tests"]
 pythonpath = ["."]
 addopts = [
     "--cov=ip_info",
-    "--cov=scripts",
     "--cov-report=term-missing",
-    "--cov-fail-under=0",
+    "--cov-fail-under=90",
     "--strict-markers",
     "--strict-config",
 ]
