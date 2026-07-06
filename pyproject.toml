@@ -3,7 +3,7 @@ requires = ["uv_build>=0.11.26,<0.12"]
 build-backend = "uv_build"
 
 [tool.uv_build]
-package-data = { ip_info = ["py.typed"] }
+package-data = { ip_info = ["py.typed", "iso_country_codes.csv"] }
 
 [project]
 name = "ip_info"

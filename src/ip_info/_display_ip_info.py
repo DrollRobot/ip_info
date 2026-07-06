@@ -6,13 +6,14 @@ import tabulate
 
 from ip_info._format_ownership import _format_ownership
 from ip_info._format_timestamp import _format_timestamp
+from ip_info.country_codes import get_country_name
 from ip_info.db._query_db import _fetch_ip_info
 
 DISPLAY_COLUMNS = [
     "api_display_name",
     "city",
     "state",
-    "cc",
+    "country",
     "ownership",
     "flags",
 ]
@@ -58,6 +59,9 @@ def display_ip_info(
                 row["timestamp"] = _format_timestamp(row["timestamp"])
                 # condense company/isp/asn/hostname
                 row["ownership"] = _format_ownership(row)
+                # resolve the country code to a full name, falling back to the raw code
+                cc = row.get("cc") or ""
+                row["country"] = get_country_name(cc) or cc
 
             # sort rows by api_display_name
             rows.sort(key=lambda row: row.get("api_display_name", "").lower())

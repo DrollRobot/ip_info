@@ -7,9 +7,13 @@ from pathlib import Path
 
 @functools.cache
 def _load_country_codes() -> dict[str, str]:
-    """Load the ISO country-code -> name map from the bundled CSV (cached)."""
+    """Load the ISO country-code -> name map from the bundled CSV (cached).
+
+    The CSV is generated from the IANA tz database's public-domain iso3166.tab
+    (shipped by the ``tzdata`` package) and bundled inside the package.
+    """
     codes: dict[str, str] = {}
-    csv_path = Path(__file__).parent.parent / "iso_country_codes.csv"
+    csv_path = Path(__file__).parent / "iso_country_codes.csv"
     try:
         with open(csv_path, encoding="utf-8") as f:
             reader = csv.reader(f)
