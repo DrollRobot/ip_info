@@ -124,7 +124,7 @@ def criminalipio(
             "risk": "",
             "city": "",
             "state": "",
-            "cc": "",
+            "cc": cc,
             "company": result.get("summary", {}).get("connection", {}).get("ip_address_owner", ""),
             "isp": "",
             "as_name": "",

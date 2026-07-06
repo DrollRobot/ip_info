@@ -213,16 +213,19 @@ def _is_db_entry_recent(
 ) -> bool:
     """Check if a database entry for the specified API and IP address is recent.
 
-    Returns True if at least one entry is within max_age days.
+    Returns True if at least one entry is within max_age days. Naive stored
+    timestamps are interpreted as UTC so comparisons never mix naive and aware.
     """
     # reuse _fetch_ip_info, passing along db_conn
     entries = _fetch_ip_info(api_names=[api_name], ip_address=ip_address, db_conn=db_conn)
     if not entries:
         return False
 
-    first_ts = entries[0]["timestamp"]
-    tz = first_ts.tzinfo or UTC
-    now = datetime.now(tz)
-    cutoff = now - timedelta(days=max_age)
+    cutoff = datetime.now(UTC) - timedelta(days=max_age)
 
-    return any(entry.get("timestamp") and entry["timestamp"] >= cutoff for entry in entries)
+    def _as_aware(timestamp: datetime) -> datetime:
+        return timestamp if timestamp.tzinfo else timestamp.replace(tzinfo=UTC)
+
+    return any(
+        entry.get("timestamp") and _as_aware(entry["timestamp"]) >= cutoff for entry in entries
+    )
