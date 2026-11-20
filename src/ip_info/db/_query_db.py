@@ -5,7 +5,7 @@ import time
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from ip_info.config import (
+from ip_info.constants import (
     IP_TABLE_NAME,
     LOCAL_TIMEZONE,
     MAX_AGE,

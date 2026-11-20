@@ -7,6 +7,8 @@ import pytest
 
 from ip_info.country_codes import _load_country_codes, get_country_name
 
+pytestmark = pytest.mark.unit
+
 _FAKE_CSV = "code,name\nUS,United States\nDE,Germany\n"
 
 

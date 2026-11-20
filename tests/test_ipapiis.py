@@ -9,12 +9,14 @@ import pytest
 import requests
 
 from ip_info.apis.ipapiis import ipapiis
-from ip_info.config import IP_TABLE_NAME, QUERY_TABLE_NAME, REQUEST_TIMEOUT
+from ip_info.constants import IP_TABLE_NAME, QUERY_TABLE_NAME, REQUEST_TIMEOUT
+
+pytestmark = pytest.mark.integration
 
 MODULE = "ip_info.apis.ipapiis"
 API_NAME = "ipapiis"
 DISPLAY_NAME = "IPAPI.is"
-API_KEY = "secret-key"  # pragma: allowlist secret
+API_KEY = "secret-key"
 URL = "https://api.ipapi.is"
 
 

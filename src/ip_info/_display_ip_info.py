@@ -31,10 +31,10 @@ def display_ip_info(
         ip_addresses: one or more ip strings
         db_conn:     open sqlite connection to the ip_info.db
         output_format:
-            - "rawjson"   → pretty-print raw JSON for every api row
-            - "jsontable" → JSON object keyed by IP with table as value
-            - "table"     → compact tabular summary (default)
-            - "none"      → do nothing
+            - "rawjson"   -> pretty-print raw JSON for every api row
+            - "jsontable" -> JSON object keyed by IP with table as value
+            - "table"     -> compact tabular summary (default)
+            - "none"      -> do nothing
     """
     jsontable_result = {}
 

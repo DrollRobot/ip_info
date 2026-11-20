@@ -1,29 +1,86 @@
-default_language_version:
-  python: python3.14
+# .pre-commit-config.yaml
 
-ci:
-  autoupdate_schedule: monthly
+# configure pre-commit checks
+# install uv: https://docs.astral.sh/uv/
+# uv sync
+# uv run pre-commit install
+# uv run pre-commit install --hook-type pre-push
+# Every hook runs through `uv run`: its version is the one in uv.lock.
+
+default_stages: [pre-commit]
 
 repos:
-  # Generic hygiene
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+  # Generic hygiene, from the pre-commit-hooks package (a dev dependency)
+  - repo: local
     hooks:
       - id: trailing-whitespace
+        name: trim trailing whitespace
+        entry: uv run trailing-whitespace-fixer
+        language: system
+        types: [text]
       - id: end-of-file-fixer
+        name: fix end of files
+        entry: uv run end-of-file-fixer
+        language: system
+        types: [text]
       - id: check-yaml
+        name: check yaml
+        entry: uv run check-yaml
+        language: system
+        types: [yaml]
       - id: check-toml
+        name: check toml
+        entry: uv run check-toml
+        language: system
+        types: [toml]
       - id: check-added-large-files
+        name: check for added large files
+        entry: uv run check-added-large-files
+        language: system
       - id: mixed-line-ending
-        args: [--fix=lf]  # since you work cross-platform
+        name: mixed line ending
+        entry: uv run mixed-line-ending --fix=lf  # for cross-platform support
+        language: system
+        types: [text]
+
+  # detect-secrets
+  - repo: local
+    hooks:
+      # The wrapper fixes path matching on Windows, where the plain hook keeps
+      # baseline entries for files with no secrets left and CI then fails.
+      # Serial: parallel batches each rewrite the baseline and the last one wins.
+      - id: detect-secrets
+        name: Detect secrets
+        entry: uv run python tests/detect_secrets_hook.py --baseline .secrets.baseline
+        language: system
+        require_serial: true
+
+      # The hook above only checks that findings are *in* the baseline; this
+      # gate requires every entry to be an audited false positive, so a
+      # blindly regenerated baseline cannot smuggle a real secret into a
+      # commit (and therefore into pushed history).
+      - id: secrets-baseline-audited
+        name: secrets baseline audited
+        entry: uv run pytest tests/test_secrets_baseline_audited.py --no-cov -q
+        language: system
+        pass_filenames: false
+        always_run: true
 
   # Ruff: lint + format
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.20
+  - repo: local
     hooks:
       - id: ruff
-        args: [--fix]
+        name: ruff check
+        entry: uv run ruff check --fix --force-exclude
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
       - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format --force-exclude
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
 
   # Mypy type checking
   - repo: local
@@ -43,9 +100,53 @@ repos:
         files: ^pyproject\.toml$
         pass_filenames: false
 
-  # detect-secrets
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.5.0
+  # Block inline secret-scanner suppressions at commit time
+  - repo: local
     hooks:
-      - id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
+      - id: no-inline-secret-suppressions
+        name: no inline secret suppressions
+        entry: uv run pytest tests/test_no_inline_suppressions_for_secrets.py --no-cov -q
+        language: system
+        pass_filenames: false
+        always_run: true
+
+  # Pre-push checks
+  - repo: local
+    hooks:
+      # uv lock file verification
+      - id: uv-lock-check
+        name: uv lock --locked
+        entry: uv lock --locked
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true
+
+      # dependency vulnerability checking
+      - id: uv-audit
+        name: uv audit
+        entry: uv audit
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true
+
+      # dead code checking
+      - id: vulture
+        name: vulture
+        entry: uv run vulture
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true
+
+      # run non-slow, non-live pytest
+      - id: pytest-prepush
+        name: pytest (prepush)
+        entry: >-
+          uv run pytest -m
+          "not live and not slow and not destructive_local and not destructive_remote"
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true

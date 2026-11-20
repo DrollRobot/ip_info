@@ -22,8 +22,8 @@ ip_info 1.2.3.4 --output rawjson
 
 ## Choosing which providers to query
 
-By default, `ip_info` queries every provider that has a key saved in the keyring,
-plus every provider that does not require a key.
+By default, `ip_info` queries every provider that has an API key set, plus
+every provider that does not require a key.
 
 To query specific providers, use `--apis` with one or more provider names:
 
@@ -37,3 +37,12 @@ ip_info 1.2.3.4 --apis virustotalcom ipqueryio
 
 See **[Providers](providers.md)** for the full list of provider names and how to
 add API keys.
+
+## Settings and the lookup database
+
+Lookups are cached in a SQLite database in your user data folder.
+`ip-info-config show` prints its location (`db_path`) along with every other
+setting; `ip-info-config set db_path <file>` points it at another file.
+
+To keep separate settings and keys, for example for work and home, use
+profiles: `ip-info-config init --profile work`, then `ip_info --profile work ...`.

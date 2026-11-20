@@ -1,5 +1,7 @@
+# .github/ISSUE_TEMPLATE/config.yml
+
 blank_issues_enabled: false
 contact_links:
   - name: Documentation
-    url: https://DrollRobot.github.io/ip_info/
+    url: https://DrollRobot.github.io/ip-info/
     about: Check the docs before opening an issue.

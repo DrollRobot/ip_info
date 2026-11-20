@@ -9,12 +9,14 @@ import pytest
 import requests
 
 from ip_info.apis.ip2locationio import ip2locationio
-from ip_info.config import IP_TABLE_NAME, QUERY_TABLE_NAME
+from ip_info.constants import IP_TABLE_NAME, QUERY_TABLE_NAME
+
+pytestmark = pytest.mark.integration
 
 MODULE = "ip_info.apis.ip2locationio"
 API_NAME = "ip2locationio"
 API_DISPLAY_NAME = "IP2Location.io"
-API_KEY = "test-ip2location-key"  # pragma: allowlist secret
+API_KEY = "test-ip2location-key"
 
 
 class _FakeResponse:

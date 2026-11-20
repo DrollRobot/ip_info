@@ -8,7 +8,7 @@ from typing import Any
 
 import requests
 
-from ip_info.config import LOCAL_TIMEZONE, REQUEST_TIMEOUT
+from ip_info.constants import LOCAL_TIMEZONE, REQUEST_TIMEOUT
 from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
 from ip_info.db._query_db import _is_db_entry_recent, _respect_rate_limit
 

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from ip_info.config import LOCAL_TIMEZONE, MAX_RATE_LIMIT_WAIT
+from ip_info.constants import LOCAL_TIMEZONE, MAX_RATE_LIMIT_WAIT
 from ip_info.db import _query_db
 from ip_info.db._query_db import (
     _absolute_window,
@@ -14,6 +14,8 @@ from ip_info.db._query_db import (
     _respect_rate_limit,
     _rolling_window,
 )
+
+pytestmark = pytest.mark.integration
 
 API = "demo"
 

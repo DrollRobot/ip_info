@@ -3,6 +3,8 @@ import pytest
 
 from ip_info._parse_clipboard import parse_clipboard
 
+pytestmark = pytest.mark.unit
+
 
 def test_parse_clipboard(monkeypatch: pytest.MonkeyPatch) -> None:
     # parse_clipboard() is a pure scraper: it extracts every IP-like token,

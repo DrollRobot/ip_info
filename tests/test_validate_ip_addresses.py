@@ -4,6 +4,8 @@ import pytest
 
 from ip_info._validate_ip_addresses import _validate_ip_addresses
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.mark.parametrize(
     ("raw", "expected"),

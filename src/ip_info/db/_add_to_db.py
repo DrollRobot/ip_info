@@ -7,7 +7,7 @@ from typing import Any
 
 import requests
 
-from ip_info.config import IP_INSERT_ORDER, IP_TABLE_NAME, LOCAL_TIMEZONE, QUERY_TABLE_NAME
+from ip_info.constants import IP_INSERT_ORDER, IP_TABLE_NAME, LOCAL_TIMEZONE, QUERY_TABLE_NAME
 
 
 def _insert_ip_info(*, entries: list[dict[str, Any]], db_conn: sqlite3.Connection) -> None:

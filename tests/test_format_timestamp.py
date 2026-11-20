@@ -4,6 +4,8 @@ import pytest
 
 from ip_info._format_timestamp import _format_timestamp
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.mark.parametrize(
     ("timestamp", "expected"),

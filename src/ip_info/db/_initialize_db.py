@@ -2,7 +2,7 @@ import sqlite3
 import sys
 from datetime import datetime
 
-from ip_info.config import IP_TABLE_NAME, TABLES
+from ip_info.constants import IP_TABLE_NAME, TABLES
 
 
 # register adapter: Convert aware datetime objects to ISO formatted strings.

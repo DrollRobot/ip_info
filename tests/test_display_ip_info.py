@@ -9,6 +9,8 @@ import pytest
 from ip_info._display_ip_info import display_ip_info
 from ip_info.db._add_to_db import _insert_ip_info
 
+pytestmark = pytest.mark.integration
+
 
 def _make_entry(
     *,

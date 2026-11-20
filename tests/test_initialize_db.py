@@ -4,13 +4,15 @@ from typing import cast
 
 import pytest
 
-from ip_info.config import IP_TABLE_NAME, QUERY_TABLE_NAME, TABLES
+from ip_info.constants import IP_TABLE_NAME, QUERY_TABLE_NAME, TABLES
 from ip_info.db._initialize_db import (
     adapt_datetime,
     convert_datetime,
     ensure_columns_exist,
     initialize_db,
 )
+
+pytestmark = pytest.mark.integration
 
 
 def _table_columns(conn: sqlite3.Connection, table_name: str) -> set[str]:

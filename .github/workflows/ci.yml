@@ -1,10 +1,11 @@
 # .github/workflows/ci.yml
 
 name: CI
+run-name: CI on ${{ github.ref_name }} ${{ github.event_name }} by @${{ github.actor }}
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
     branches: [main]
 
@@ -17,7 +18,14 @@ concurrency:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.14.10"]
+    runs-on: ${{ matrix.os }}
+    env:
+      UV_PYTHON: ${{ matrix.python }}  # overrides .python-version for every uv command
     steps:
       - uses: actions/checkout@v7
 
@@ -25,10 +33,9 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-          version: "0.11.x"
 
       - name: Sync dependencies
-        run: uv sync --locked --all-groups
+        run: uv sync --locked --all-groups --all-extras
 
       - name: Lint (ruff check)
         run: uv run ruff check .
@@ -39,5 +46,8 @@ jobs:
       - name: Type check (mypy)
         run: uv run mypy
 
-      - name: Unit tests
-        run: uv run pytest -m "not integration"
+      - name: Dead code (vulture)
+        run: uv run vulture
+
+      - name: Offline tests
+        run: uv run pytest -m "not live"

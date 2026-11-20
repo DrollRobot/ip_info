@@ -20,9 +20,9 @@ reliable approach is to check several at once.
 
 ## Where to go next
 
-- **[Install](install.md)** — get `ip_info` set up with uv or pip.
-- **[Usage](usage.md)** — look up addresses, parse the clipboard, choose the
+- **[Install](install.md)** - get `ip_info` set up with uv or pip.
+- **[Usage](usage.md)** - look up addresses, parse the clipboard, choose the
   output format and providers.
-- **[Providers](providers.md)** — the supported providers and how to store their
+- **[Providers](providers.md)** - the supported providers and how to store their
   API keys.
-- **[Reference](reference/ip_info.md)** — package API documentation.
+- **[Reference](reference/ip_info.md)** - package API documentation.

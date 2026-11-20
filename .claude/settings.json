@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(detect-secrets scan > .secrets.baseline)",
+      "Bash(uv run detect-secrets scan > .secrets.baseline)",
+      "Edit(uv.lock)",
+      "Edit(**/uv.lock)",
+      "Edit(.secrets.baseline)",
+      "PowerShell(detect-secrets scan > .secrets.baseline)",
+      "PowerShell(uv run detect-secrets scan > .secrets.baseline)"
+    ]
+  }
+}

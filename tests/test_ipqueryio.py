@@ -9,12 +9,14 @@ import pytest
 import requests
 
 from ip_info.apis.ipqueryio import ipqueryio
-from ip_info.config import IP_TABLE_NAME, QUERY_TABLE_NAME, REQUEST_TIMEOUT
+from ip_info.constants import IP_TABLE_NAME, QUERY_TABLE_NAME, REQUEST_TIMEOUT
+
+pytestmark = pytest.mark.integration
 
 MODULE = "ip_info.apis.ipqueryio"
 API_NAME = "ipqueryio"
 API_DISPLAY_NAME = "IPQuery.io"
-API_KEY = "unused-key"  # pragma: allowlist secret
+API_KEY = "unused-key"
 
 
 class StubResponse:

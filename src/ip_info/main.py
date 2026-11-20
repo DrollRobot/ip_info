@@ -2,11 +2,13 @@
 
 import argparse
 import ipaddress
+import os
 import sqlite3
 import sys
 import traceback
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Any, cast
 
 from ip_info._ask_yn import ask_yn
@@ -27,9 +29,27 @@ from ip_info.apis.ipinfoio import ipinfoio  # noqa: F401
 from ip_info.apis.ipqueryio import ipqueryio  # noqa: F401
 from ip_info.apis.ipregistryco import ipregistryco  # noqa: F401
 from ip_info.apis.virustotalcom import virustotalcom  # noqa: F401
-from ip_info.config import API_METADATA, DB_PATH
+from ip_info.config import ConfigError, Settings, load_settings
+from ip_info.constants import API_METADATA
 from ip_info.db._initialize_db import ensure_columns_exist, initialize_db
-from ip_info.keys import _get_api_key
+
+
+def ensure_db_dir(db_path: str) -> None:
+    """Create the folder that holds the database, if it does not exist yet.
+
+    A folder this function creates is restricted to the owner on POSIX
+    (``0o700``): the cache records which IP addresses the user looked up. An
+    existing folder is left as it is.
+
+    Args:
+        db_path: Path of the SQLite database file.
+    """
+    directory = Path(db_path).parent
+    if directory.exists():
+        return
+    directory.mkdir(parents=True)
+    if os.name == "posix":
+        os.chmod(directory, 0o700)
 
 
 def run_api_function_threadsafe(
@@ -39,9 +59,10 @@ def run_api_function_threadsafe(
     ip_addresses: list[ipaddress.IPv4Address | ipaddress.IPv6Address],
     rate_limits: list[dict[str, Any]],
     api_key: str | None,
+    db_path: str,
 ) -> None:
     """Run one provider function on its own DB connection, isolating failures per thread."""
-    db_conn = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
+    db_conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
     try:
         api_function(
             api_name=api_name,
@@ -58,10 +79,24 @@ def run_api_function_threadsafe(
         db_conn.close()
 
 
-def main(*, user_input: list[str], query_apis: list[str], output_format: str = "table") -> None:
-    """Validate the input IPs, query the selected APIs concurrently, and display results."""
+def main(
+    *,
+    user_input: list[str],
+    query_apis: list[str],
+    settings: Settings,
+    output_format: str = "table",
+) -> None:
+    """Validate the input IPs, query the selected APIs concurrently, and display results.
+
+    Args:
+        user_input: IP addresses from the command line; empty to read the clipboard.
+        query_apis: Provider names to query.
+        settings: Resolved configuration: database location and provider API keys.
+        output_format: How to display the results.
+    """
     # open database
-    db_conn = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
+    ensure_db_dir(settings.db_path)
+    db_conn = sqlite3.connect(settings.db_path, detect_types=sqlite3.PARSE_DECLTYPES)
 
     try:
         # verify the database schema is correct
@@ -99,13 +134,15 @@ def main(*, user_input: list[str], query_apis: list[str], output_format: str = "
                 rate_limits = api_metadata["rate_limits"]
                 requires_key = api_metadata["requires_key"]
 
-                api_key = _get_api_key(api_name)
-                if not api_key and requires_key:
-                    continue
-
                 api_function = globals().get(api_name)
                 if api_function is None:
                     print(f"No implementation found for {api_name}")
+                    continue
+
+                # Every implemented provider has a <name>_api_key field; a missing
+                # one is a schema bug, so this raises instead of defaulting.
+                api_key: str | None = getattr(settings, f"{api_name}_api_key")
+                if not api_key and requires_key:
                     continue
 
                 futures.append(
@@ -117,6 +154,7 @@ def main(*, user_input: list[str], query_apis: list[str], output_format: str = "
                         ip_addresses,
                         rate_limits,
                         api_key,
+                        settings.db_path,
                     )
                 )
 
@@ -175,8 +213,18 @@ def cli() -> None:
         default=["all"],
         help="Comma separated list of APIs to query.",
     )
+    parser.add_argument(
+        "--profile",
+        default=None,
+        help="Config profile to use (default: default_profile from config.toml).",
+    )
 
     args = parser.parse_args()
+
+    try:
+        settings = load_settings(profile=args.profile)
+    except ConfigError as exc:
+        sys.exit(f"ERROR: {exc}")
 
     # parse ips from positional or named argument, normalize to list
     user_input = cast(list[str], args.ip_addresses_arg or args.ip_addresses_pos)
@@ -193,7 +241,12 @@ def cli() -> None:
     elif args.query_apis == ["none"]:
         args.query_apis = []
 
-    main(user_input=user_input, query_apis=args.query_apis, output_format=args.output_format)
+    main(
+        user_input=user_input,
+        query_apis=args.query_apis,
+        settings=settings,
+        output_format=args.output_format,
+    )
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ Installing provides these commands:
 | Command | Purpose |
 |---|---|
 | `ip_info` | Look up one or more IP addresses (alias: `ipi`). |
-| `ip_info_keys` | Store or update provider API keys. |
+| `ip-info-config` | Manage settings and provider API keys (see [Providers](providers.md)). |
 
 
 See **[Usage](usage.md)** to get started.

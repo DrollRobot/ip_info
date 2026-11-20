@@ -1,6 +1,7 @@
 # .github/workflows/docs.yml
 
 name: Docs
+run-name: Docs on ${{ github.ref_name }} ${{ github.event_name }} by @${{ github.actor }}
 
 on:
   push:
@@ -27,7 +28,6 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-          version: "0.11.x"
 
       - name: Sync docs dependencies
         run: uv sync --locked --group docs

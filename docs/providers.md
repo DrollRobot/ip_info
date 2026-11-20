@@ -6,50 +6,46 @@ rest offer a free tier that needs an API key. Use the **name** column with
 
 ## Adding API keys
 
-API keys are stored encrypted at rest using the
-[`keyring`](https://pypi.org/project/keyring/) library, so they are never kept
-in the repository or in plain text.
+API keys are stored in your operating system's credential store (Windows
+Credential Manager, macOS Keychain, or the Linux Secret Service), so they are
+never kept in the repository or in plain text. The settings file,
+`config.toml`, holds only the name each key is stored under.
 
-To add or update a key, run:
-```
-ip_info_keys
-```
+Each key's setting is the provider's `--apis` name plus `_api_key`. To add or
+replace one:
 
-Then, select a provider:
 ```
-=== API KEY MANAGER ===
-1. AbstractAPI.com
-2. AbuseIPDB.com
-3. CriminalIP.io
-4. IP2Location.io
-5. IPAPI.co
-6. IPAPI.com
-7. IPAPI.is
-8. IPAPI.org
-9. IP-API.com
-10. IPGeolocation.io
-11. IPInfo.io
-12. IPQuery.io
-13. IPRegistry.co
-14. VirusTotal.com
-q. Quit
-Select an API:
+ip-info-config set-secret abuseipdbcom_api_key
 ```
 
-Choose `2` to set a new key:
+It asks for the storage name (press Enter to accept the default), then for
+the key, hidden.
+
+To set up several keys in one pass, run `ip-info-config init`. It asks about
+each provider in turn; answer `n` to skip one.
+
+| Task | Command |
+|---|---|
+| See which keys are set (values masked) | `ip-info-config show` |
+| Remove a key | `ip-info-config delete-secret abuseipdbcom_api_key` |
+| Find the settings file | `ip-info-config path` |
+
+Every key can also come from an environment variable, `IP_INFO_` plus the
+setting name in capitals, such as `IP_INFO_ABUSEIPDBCOM_API_KEY`.
+
+### Upgrading from 1.x
+
+ip_info 1.x stored keys in a different place, under the `ip_info_keys`
+command. After upgrading, run this once from a checkout of the repo:
+
 ```
---- AbuseIPDB.com ---
-1. Show stored key
-2. Set / replace key
-3. Delete key
-b. Back
-Choose an option:
+git clone https://github.com/DrollRobot/ip_info.git
+cd ip_info
+uv run scripts/migrate_keys.py
 ```
 
-Enter the key:
-```
-Enter new key (input hidden):
-```
+It moves each 1.x key to the new location, reads it back to check it, then
+deletes the 1.x copy.
 
 
 ## Available providers
@@ -74,7 +70,7 @@ Enter new key (input hidden):
 ## Suggesting a provider
 
 Know of a provider that offers API access in a free tier that isn't listed?
-Contributions are welcome — see
+Contributions are welcome - see
 [CONTRIBUTING.md](https://github.com/DrollRobot/ip_info/blob/main/CONTRIBUTING.md).
 Providers that need no key, have a high rate limit, and return good security
 information (Tor/VPN detection, risk scores, abuse reports) are especially

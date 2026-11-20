@@ -1,3 +1,5 @@
+# .github/ISSUE_TEMPLATE/bug_report.yml
+
 name: Bug report
 description: Something is not working as documented or expected.
 labels: ["bug"]
@@ -46,7 +48,7 @@ body:
     id: python-version
     attributes:
       label: Python version
-      placeholder: "3.14.3"
+      placeholder: "3.14.10"
     validations:
       required: true
 

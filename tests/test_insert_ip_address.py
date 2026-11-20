@@ -6,8 +6,10 @@ from typing import Any, cast
 import pytest
 import requests
 
-from ip_info.config import IP_INSERT_ORDER, IP_TABLE_NAME, QUERY_TABLE_NAME
+from ip_info.constants import IP_INSERT_ORDER, IP_TABLE_NAME, QUERY_TABLE_NAME
 from ip_info.db._add_to_db import _insert_ip_info, _insert_query_info
+
+pytestmark = pytest.mark.integration
 
 
 class _StubResponse:

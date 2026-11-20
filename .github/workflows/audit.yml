@@ -1,10 +1,11 @@
 # .github/workflows/audit.yml
 
 name: Security audit
+run-name: Audit on ${{ github.ref_name }} ${{ github.event_name }} by @${{ github.actor }}
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
     branches: [main]
 
@@ -25,11 +26,53 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-          version: "0.11.x"
 
       - name: Sync dependencies
-        run: uv sync --locked --all-groups
-
+        run: uv sync --locked --all-groups --all-extras
 
       - name: Audit dependencies
         run: uv audit
+
+  # Secret scanning.
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Sync detect-secrets
+        run: uv sync --locked --only-group secrets
+
+      - name: Scan tracked files for new secrets
+        run: |
+          git ls-files -z | xargs -0 -r \
+            uv run --no-sync detect-secrets-hook --baseline .secrets.baseline
+
+      - name: Require every baseline entry to be an audited false positive
+        run: |
+          uv run --no-sync detect-secrets audit --report .secrets.baseline > secrets-report.json
+          python3 - <<'PY'
+          import json
+          import sys
+
+          with open("secrets-report.json", encoding="utf-8") as handle:
+              results = json.load(handle)["results"]
+
+          unresolved = [r for r in results if r["category"] != "VERIFIED_FALSE"]
+          for entry in unresolved:
+              types = ", ".join(entry["types"])
+              print(
+                  f"::error file={entry['filename']}::{entry['category']}: {types}. "
+                  "Audit it with `uv run detect-secrets audit .secrets.baseline` "
+                  "and remove the secret if it is real."
+              )
+
+          if unresolved:
+              sys.exit(1)
+
+          print(f"{len(results)} baseline entries, all audited as false positives.")
+          PY

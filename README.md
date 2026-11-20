@@ -1,10 +1,10 @@
 # ip_info
 
 A Python command-line tool for quickly querying IP address information from
-multiple providers — it checks up to 15 free providers in parallel and returns
+multiple providers - it checks up to 15 free providers in parallel and returns
 geolocation and reputation data in a few seconds.
 
-## 📖 Documentation
+## Documentation
 
 Full documentation lives at **<https://DrollRobot.github.io/ip_info/>**:
 
@@ -15,4 +15,4 @@ Full documentation lives at **<https://DrollRobot.github.io/ip_info/>**:
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome - see [CONTRIBUTING.md](CONTRIBUTING.md).

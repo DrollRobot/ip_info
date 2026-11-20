@@ -18,7 +18,7 @@ IPV6_RE = r"""
         ){3}
         (?:25[0-5]|2[0-4]\d|1?\d{1,2})
       | [0-9a-f]{0,4}               # another hextet
-      | :                           # or empty hextet (“::” compression)
+      | :                           # or empty hextet ("::" compression)
     )
 """
 

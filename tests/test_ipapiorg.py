@@ -9,12 +9,14 @@ import pytest
 import requests
 
 from ip_info.apis.ipapiorg import ipapiorg
-from ip_info.config import IP_TABLE_NAME, QUERY_TABLE_NAME, REQUEST_TIMEOUT
+from ip_info.constants import IP_TABLE_NAME, QUERY_TABLE_NAME, REQUEST_TIMEOUT
+
+pytestmark = pytest.mark.integration
 
 MODULE = "ip_info.apis.ipapiorg"
 API_NAME = "ipapiorg"
 DISPLAY_NAME = "IPAPI.org"
-API_KEY = "secret-key"  # pragma: allowlist secret
+API_KEY = "secret-key"
 URL = "https://pro.ipapi.org/api_json/batch.php"
 
 

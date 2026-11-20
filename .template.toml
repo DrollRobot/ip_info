@@ -1,0 +1,72 @@
+# .template.toml -- which template this project came from and how it is
+# kept in sync. Written by the template's scripts/template_sync.py; `update`
+# moves `commit`, and adds options the template has gained to [features].
+# Edit [values], [features] and [overrides] by hand.
+#
+# To bring in the template's later changes, commit your work, then run its sync
+# tool from a checkout of the template (here, ../template):
+#
+#   git -C ../template pull
+#   uv run ../template/scripts/template_sync.py check .     # what would change
+#   uv run ../template/scripts/template_sync.py update .    # apply it, then review
+#
+# To keep this file out of the project's history, `git rm --cached` it and move
+# it to .local/, which .gitignore ignores; a fresh clone then needs its own copy.
+#
+# This is the only file in the project that refers to the template. To cut the
+# project loose from it, delete this file.
+
+[template]
+url = "git@github.com:DrollRobot/python_repo_template.git"
+commit = "faa9ea46dbfba9647fd3adc6ee63c15423e5edc3"
+
+[values]
+# One entry per token the template substitutes, in file contents and paths.
+company = "<COMPANY>"
+copyright_holder = "DrollRobot"
+copyright_year = "2025"
+github_user = "DrollRobot"
+project = "ip_info"
+python = "3.14.10"
+
+[features]
+# Optional template features. A declined feature's files are not tracked;
+# switching one after an update has applied it is largely manual.
+# MkDocs site published to GitHub Pages
+mkdocs = true
+# per-user config.toml package: schema, config CLI, resolver
+config_system = true
+# secret backends behind the config system
+secret_storage = true
+# OS keyring secret backend
+keyring = true
+# Azure Key Vault secret backend
+keyvault = false
+# CI and Dependabot steps for private git dependencies
+private_repo_deps = false
+# mark/verify-remote-disposable pair gating destructive_remote tests
+remote_disposable_scripts = false
+# test that fails on non-ASCII characters in repo files
+ascii_only = true
+# SECURITY.md
+security_policy = true
+# CONTRIBUTING.md
+contributing_guide = true
+# scheduled Azure Container Apps job: image, image workflow, setup script
+container_job = false
+# the project's license
+license = true
+# MIT license
+license_mit = true
+# Apache License 2.0
+license_apache = false
+# GNU General Public License v3.0
+license_gnu = false
+# proprietary license, all rights reserved
+license_proprietary = false
+
+[overrides]
+# Per-file strategy overrides, keyed by path as listed in the template's
+# template.toml: managed, merge, seed, or ignore. For example:
+#   ".gitignore" = "merge"    # I add my own ignores; merge template changes in
+#   "Makefile" = "ignore"     # forked for good; stop tracking it

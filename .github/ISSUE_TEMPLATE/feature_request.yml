@@ -1,3 +1,5 @@
+# .github/ISSUE_TEMPLATE/feature_request.yml
+
 name: Feature request
 description: Suggest a new enhancement.
 labels: ["enhancement"]

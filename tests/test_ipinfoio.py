@@ -8,12 +8,14 @@ from typing import Any
 import pytest
 
 from ip_info.apis.ipinfoio import ipinfoio
-from ip_info.config import IP_TABLE_NAME, QUERY_TABLE_NAME
+from ip_info.constants import IP_TABLE_NAME, QUERY_TABLE_NAME
+
+pytestmark = pytest.mark.integration
 
 MODULE = "ip_info.apis.ipinfoio"
 API_NAME = "ipinfoio"
 API_DISPLAY_NAME = "IPInfo.io"
-API_KEY = "fake-api-key"  # pragma: allowlist secret
+API_KEY = "fake-api-key"
 
 
 class StubHandler:

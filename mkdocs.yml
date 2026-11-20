@@ -6,9 +6,9 @@ repo_url: https://github.com/DrollRobot/ip_info
 theme:
   name: material
   features:
-    - navigation.sections
-    - navigation.expand
-    - content.code.copy
+    - navigation.sections     # collapsible sections in left nav
+    - navigation.expand       # expand all by default
+    - content.code.copy       # copy button on code blocks
     - search.highlight
 
 nav:
@@ -19,12 +19,12 @@ nav:
   - Reference: reference/ip_info.md
 
 markdown_extensions:
-  - admonition
-  - pymdownx.superfences
-  - pymdownx.highlight
-  - pymdownx.inlinehilite
+  - admonition                # !!! note style callouts
+  - pymdownx.superfences      # fenced code with language detection
+  - pymdownx.highlight        # syntax highlighting
+  - pymdownx.inlinehilite     # inline `code` highlighting
   - toc:
-      permalink: true
+      permalink: true         # anchor link on each heading
 
 plugins:
   - search

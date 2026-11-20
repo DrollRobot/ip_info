@@ -2,6 +2,8 @@ import pytest
 
 from ip_info._ask_yn import ask_yn
 
+pytestmark = pytest.mark.unit
+
 
 def test_ask_yn_true(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("builtins.input", lambda _: "y")

@@ -5,9 +5,11 @@ from typing import Any, cast
 
 import pytest
 
-from ip_info.config import IP_TABLE_NAME, MAX_AGE
+from ip_info.constants import IP_TABLE_NAME, MAX_AGE
 from ip_info.db._add_to_db import _insert_ip_info
 from ip_info.db._query_db import _fetch_ip_info, _is_db_entry_recent
+
+pytestmark = pytest.mark.integration
 
 
 def _make_entry(*, ip_address: str, api_name: str, timestamp: datetime) -> dict[str, Any]:
