@@ -2,11 +2,12 @@
 # ignore any .local files
 *.local*
 
+# env files often hold secrets: ignore them all, except the example
+*.env*
+!.env.example
+
 # ip_info 1.x kept its database inside the package folder
 src/ip_info/ip_info.db
-
-# env files often hold secrets; never commit one
-.env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
