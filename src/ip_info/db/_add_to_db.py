@@ -2,12 +2,12 @@ import json
 import sqlite3
 import sys
 from collections.abc import Iterable, Mapping
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import requests
 
-from ip_info.constants import IP_INSERT_ORDER, IP_TABLE_NAME, LOCAL_TIMEZONE, QUERY_TABLE_NAME
+from ip_info.constants import IP_INSERT_ORDER, IP_TABLE_NAME, QUERY_TABLE_NAME
 
 
 def _insert_ip_info(*, entries: list[dict[str, Any]], db_conn: sqlite3.Connection) -> None:
@@ -101,7 +101,7 @@ def _insert_query_info(
         sys.exit("ERROR: no database connection provided.")
 
     # capture when this call happened
-    timestamp = datetime.now(LOCAL_TIMEZONE)
+    timestamp = datetime.now(UTC)
 
     # status and any error body
     status = response.status_code

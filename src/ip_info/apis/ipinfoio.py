@@ -2,12 +2,11 @@
 
 import ipaddress
 import sqlite3
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import ipinfo
 
-from ip_info.constants import LOCAL_TIMEZONE
 from ip_info.db._add_to_db import _insert_ip_info
 from ip_info.db._query_db import _is_db_entry_recent
 
@@ -49,7 +48,7 @@ def ipinfoio(
         return
 
     # save query time for ip database timestamp
-    last_request_time = datetime.now(LOCAL_TIMEZONE)
+    last_request_time = datetime.now(UTC)
 
     for query_ip, result in results.items():
         # split as and company

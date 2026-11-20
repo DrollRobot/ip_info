@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from typing import cast
 
 import pytest
@@ -29,6 +29,12 @@ def _index_uniqueness(conn: sqlite3.Connection, table_name: str) -> dict[str, in
 def test_adapt_datetime_aware_returns_isoformat() -> None:
     dt = datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC)
     assert adapt_datetime(dt) == dt.isoformat()
+
+
+def test_adapt_datetime_stores_other_time_zones_as_utc() -> None:
+    eastern = timezone(timedelta(hours=-5))
+    dt = datetime(2026, 1, 2, 3, 4, 5, tzinfo=eastern)
+    assert adapt_datetime(dt) == "2026-01-02T08:04:05+00:00"
 
 
 def test_adapt_datetime_naive_raises_value_error() -> None:

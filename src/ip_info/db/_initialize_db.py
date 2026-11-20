@@ -1,15 +1,28 @@
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 
 from ip_info.constants import IP_TABLE_NAME, TABLES
 
 
-# register adapter: Convert aware datetime objects to ISO formatted strings.
 def adapt_datetime(dt: datetime) -> str:
+    """Convert an aware datetime to the ISO string SQLite stores, always in UTC.
+
+    Storing one offset keeps the text column in time order, so ``ORDER BY
+    timestamp`` sorts correctly; display converts back to local time.
+
+    Args:
+        dt: A timezone-aware datetime, in any time zone.
+
+    Returns:
+        The instant as an ISO 8601 string with a ``+00:00`` offset.
+
+    Raises:
+        ValueError: If *dt* is naive: its time zone would be a guess.
+    """
     if dt.tzinfo is None:
         raise ValueError("Naive datetimes are not accepted. Use a timezone aware datetime.")
-    return dt.isoformat()
+    return dt.astimezone(UTC).isoformat()
 
 
 # register converter: Convert ISO formatted strings to aware datetime objects.

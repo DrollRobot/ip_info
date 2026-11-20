@@ -5,7 +5,6 @@ config system instead: see ``ip_info.config``.
 """
 
 from typing import Any
-from zoneinfo import ZoneInfo
 
 API_METADATA: dict[str, dict[str, Any]] = {
     "abstractapicom": {
@@ -227,8 +226,8 @@ API_METADATA: dict[str, dict[str, Any]] = {
 }
 
 
-TIMEZONE_STRING = "America/New_York"
-LOCAL_TIMEZONE = ZoneInfo(TIMEZONE_STRING)
+# Timestamps are stored in UTC and shown in the computer's local time zone; see
+# db/_initialize_db.py (storage) and _format_timestamp.py (display).
 MAX_AGE = 90
 REQUEST_TIMEOUT = 10  # seconds; timeout for outbound provider HTTP requests
 MAX_RATE_LIMIT_WAIT = 1  # seconds; longest we block-wait on a rate limit before skipping

@@ -2,11 +2,11 @@
 
 import sqlite3
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from ip_info.constants import LOCAL_TIMEZONE, MAX_RATE_LIMIT_WAIT
+from ip_info.constants import MAX_RATE_LIMIT_WAIT
 from ip_info.db import _query_db
 from ip_info.db._query_db import (
     _absolute_window,
@@ -22,7 +22,7 @@ API = "demo"
 
 def _ts(seconds_ago: float) -> datetime:
     """Return a timezone-aware timestamp *seconds_ago* seconds in the past."""
-    return datetime.now(LOCAL_TIMEZONE) - timedelta(seconds=seconds_ago)
+    return datetime.now(UTC) - timedelta(seconds=seconds_ago)
 
 
 def _insert_query(
@@ -66,28 +66,28 @@ def test_rolling_window_unknown_timeframe_raises() -> None:
     [
         (
             "second",
-            datetime(2026, 7, 6, 15, 30, 45, tzinfo=LOCAL_TIMEZONE),
-            datetime(2026, 7, 6, 15, 30, 46, tzinfo=LOCAL_TIMEZONE),
+            datetime(2026, 7, 6, 15, 30, 45, tzinfo=UTC),
+            datetime(2026, 7, 6, 15, 30, 46, tzinfo=UTC),
         ),
         (
             "minute",
-            datetime(2026, 7, 6, 15, 30, tzinfo=LOCAL_TIMEZONE),
-            datetime(2026, 7, 6, 15, 31, tzinfo=LOCAL_TIMEZONE),
+            datetime(2026, 7, 6, 15, 30, tzinfo=UTC),
+            datetime(2026, 7, 6, 15, 31, tzinfo=UTC),
         ),
         (
             "hour",
-            datetime(2026, 7, 6, 15, tzinfo=LOCAL_TIMEZONE),
-            datetime(2026, 7, 6, 16, tzinfo=LOCAL_TIMEZONE),
+            datetime(2026, 7, 6, 15, tzinfo=UTC),
+            datetime(2026, 7, 6, 16, tzinfo=UTC),
         ),
         (
             "day",
-            datetime(2026, 7, 6, tzinfo=LOCAL_TIMEZONE),
-            datetime(2026, 7, 7, tzinfo=LOCAL_TIMEZONE),
+            datetime(2026, 7, 6, tzinfo=UTC),
+            datetime(2026, 7, 7, tzinfo=UTC),
         ),
         (
             "month",
-            datetime(2026, 7, 1, tzinfo=LOCAL_TIMEZONE),
-            datetime(2026, 8, 1, tzinfo=LOCAL_TIMEZONE),
+            datetime(2026, 7, 1, tzinfo=UTC),
+            datetime(2026, 8, 1, tzinfo=UTC),
         ),
     ],
 )
@@ -95,21 +95,21 @@ def test_absolute_window_bounds(
     timeframe: str, expected_start: datetime, expected_end: datetime
 ) -> None:
     """Each absolute timeframe maps to the [start, end) bounds containing now."""
-    now = datetime(2026, 7, 6, 15, 30, 45, 123456, tzinfo=LOCAL_TIMEZONE)
+    now = datetime(2026, 7, 6, 15, 30, 45, 123456, tzinfo=UTC)
     assert _absolute_window(now, timeframe) == (expected_start, expected_end)
 
 
 def test_absolute_window_month_year_rollover() -> None:
     """A December monthly window ends on January 1st of the next year."""
-    now = datetime(2026, 12, 15, 8, 0, tzinfo=LOCAL_TIMEZONE)
+    now = datetime(2026, 12, 15, 8, 0, tzinfo=UTC)
     start, end = _absolute_window(now, "month")
-    assert start == datetime(2026, 12, 1, tzinfo=LOCAL_TIMEZONE)
-    assert end == datetime(2027, 1, 1, tzinfo=LOCAL_TIMEZONE)
+    assert start == datetime(2026, 12, 1, tzinfo=UTC)
+    assert end == datetime(2027, 1, 1, tzinfo=UTC)
 
 
 def test_absolute_window_unknown_timeframe_raises() -> None:
     """An unknown absolute timeframe fails loudly."""
-    now = datetime(2026, 7, 6, tzinfo=LOCAL_TIMEZONE)
+    now = datetime(2026, 7, 6, tzinfo=UTC)
     with pytest.raises(ValueError, match="Unknown timeframe"):
         _absolute_window(now, "fortnight")
 
@@ -122,7 +122,7 @@ def test_under_limit_allows_now(db_conn: sqlite3.Connection) -> None:
 
     allowed_at = _check_rate_limits(API, rate_limits, db_conn)
 
-    assert allowed_at <= datetime.now(LOCAL_TIMEZONE)
+    assert allowed_at <= datetime.now(UTC)
 
 
 def test_no_rate_limits_allows_now(db_conn: sqlite3.Connection) -> None:
@@ -131,7 +131,7 @@ def test_no_rate_limits_allows_now(db_conn: sqlite3.Connection) -> None:
 
     allowed_at = _check_rate_limits(API, [], db_conn)
 
-    assert allowed_at <= datetime.now(LOCAL_TIMEZONE)
+    assert allowed_at <= datetime.now(UTC)
 
 
 def test_rolling_second_at_limit(db_conn: sqlite3.Connection) -> None:
@@ -168,7 +168,7 @@ def test_absolute_over_limit_returns_window_end(db_conn: sqlite3.Connection) -> 
 
     allowed_at = _check_rate_limits(API, rate_limits, db_conn)
 
-    now = datetime.now(LOCAL_TIMEZONE)
+    now = datetime.now(UTC)
     expected_end = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
     assert allowed_at == expected_end
 
@@ -211,7 +211,7 @@ def test_provider_signalled_limit_absolute_blocks_until_window_end(
 
     allowed_at = _check_rate_limits(API, rate_limits, db_conn)
 
-    now = datetime.now(LOCAL_TIMEZONE)
+    now = datetime.now(UTC)
     expected_end = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
     assert allowed_at == expected_end
 
@@ -233,7 +233,7 @@ def test_provider_signalled_error_text_mismatch_allows(db_conn: sqlite3.Connecti
 
     allowed_at = _check_rate_limits(API, rate_limits, db_conn)
 
-    assert allowed_at <= datetime.now(LOCAL_TIMEZONE)
+    assert allowed_at <= datetime.now(UTC)
 
 
 def test_multiple_limits_returns_latest_free_time(db_conn: sqlite3.Connection) -> None:
@@ -246,7 +246,7 @@ def test_multiple_limits_returns_latest_free_time(db_conn: sqlite3.Connection) -
 
     allowed_at = _check_rate_limits(API, rate_limits, db_conn)
 
-    now = datetime.now(LOCAL_TIMEZONE)
+    now = datetime.now(UTC)
     expected_end = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
     assert allowed_at == expected_end
 
@@ -276,7 +276,7 @@ def test_respect_rate_limit_proceeds_immediately(
     monkeypatch.setattr(
         _query_db,
         "_check_rate_limits",
-        lambda *args: datetime.now(LOCAL_TIMEZONE) - timedelta(seconds=10),
+        lambda *args: datetime.now(UTC) - timedelta(seconds=10),
     )
 
     assert _respect_rate_limit(API, "Demo", [], db_conn) is False
@@ -292,7 +292,7 @@ def test_respect_rate_limit_waits_for_short_delays(
     monkeypatch.setattr(
         _query_db,
         "_check_rate_limits",
-        lambda *args: datetime.now(LOCAL_TIMEZONE) + timedelta(seconds=MAX_RATE_LIMIT_WAIT),
+        lambda *args: datetime.now(UTC) + timedelta(seconds=MAX_RATE_LIMIT_WAIT),
     )
 
     assert _respect_rate_limit(API, "Demo", [], db_conn) is False
@@ -309,7 +309,7 @@ def test_respect_rate_limit_skips_long_delays(
     monkeypatch.setattr(
         _query_db,
         "_check_rate_limits",
-        lambda *args: datetime.now(LOCAL_TIMEZONE) + timedelta(seconds=MAX_RATE_LIMIT_WAIT + 60),
+        lambda *args: datetime.now(UTC) + timedelta(seconds=MAX_RATE_LIMIT_WAIT + 60),
     )
 
     assert _respect_rate_limit(API, "Demo", [], db_conn) is True

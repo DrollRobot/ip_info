@@ -29,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reinstall replaced, to the per-user data folder; `db_path` in `config.toml`
   points it elsewhere. The old database is a cache and is not moved.
 - **Breaking:** requires Python 3.14.10 or a later 3.14 release.
+- Timestamps are stored in UTC and shown in the computer's local time zone,
+  instead of always in US Eastern time. Daily and monthly rate-limit windows
+  now reset at midnight UTC.
 - The project now follows python_repo_template and syncs with it through
   `.template.toml`.
 

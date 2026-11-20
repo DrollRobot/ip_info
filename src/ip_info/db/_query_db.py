@@ -7,7 +7,6 @@ from typing import Any
 
 from ip_info.constants import (
     IP_TABLE_NAME,
-    LOCAL_TIMEZONE,
     MAX_AGE,
     MAX_RATE_LIMIT_WAIT,
     QUERY_TABLE_NAME,
@@ -106,7 +105,7 @@ def _check_rate_limits(
     the caller's responsibility (see _respect_rate_limit).
 
     Returns:
-      A timezone-aware datetime in LOCAL_TIMEZONE. A value at or before the current
+      A timezone-aware datetime in UTC. A value at or before the current
       time means the query may proceed immediately; a future value is the earliest
       instant at which every configured limit is satisfied.
     """
@@ -131,7 +130,7 @@ def _check_rate_limits(
     )
     rows = cursor.fetchall()
 
-    now = datetime.now(LOCAL_TIMEZONE)
+    now = datetime.now(UTC)
     free_times: list[datetime] = [now]
 
     for rate_limit in rate_limits:
@@ -189,7 +188,7 @@ def _respect_rate_limit(
       False - Clear to query now (after sleeping, if a short wait was needed).
     """
     allowed_at = _check_rate_limits(api_name, rate_limits, db_conn)
-    wait = (allowed_at - datetime.now(LOCAL_TIMEZONE)).total_seconds()
+    wait = (allowed_at - datetime.now(UTC)).total_seconds()
     if wait <= 0:
         return False
     if wait <= MAX_RATE_LIMIT_WAIT:
