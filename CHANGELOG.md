@@ -38,6 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **Breaking:** the `ip_info_keys` command. Use `ip-info-config` instead.
+- The `tzdata` dependency. ip_info no longer looks up named time zones.
+
+### Security
+
+- Locked dependencies are upgraded past their known vulnerabilities
+  (aiohttp, certifi, multidict, urllib3).
 
 ## [1.8.0] - 2026-07-06
 
